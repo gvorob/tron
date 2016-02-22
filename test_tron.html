@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+#debug {
+	border-style: solid;
+	border-width: 1px;	
+	float: left;
+}
+canvas {
+	border-style: solid;
+	border-width: 1px;
+	float: left;
+	clear: left;
+}
+</style>
+<meta charset="utf-8"/>
+</head>
+<body onload="init()">
+<div id="debug">Woosp</div>
+<canvas id="canvas" width="600" height="600"></canvas>
+<script type="text/javascript" src="vector.js"></script>
+<script type="text/javascript" src="tron.js"></script>
+<script type="text/javascript">
+console.log("Loading main js...")
+
+function slog(x) {document.getElementById("debug").innerHTML = x;}
+var CONSTANTS = {};
+CONSTANTS.pixelsperunit = 64;
+
+function init() {
+	console.log("Running code...")
+
+	slog("s");
+	var c = document.getElementById("canvas");
+	var g = c.getContext("2d");
+	
+	testtron(g)
+}
+
+
+console.log("Done");
+
+</script>
+
+</body>
+</html>
