@@ -43,6 +43,16 @@ Grid.prototype.checkAlive = function(x, y) {
 	return this.data[x][y];
 }
 
+Grid.prototype.setAlive = function(x, y, life) {
+	if(!this.isInBounds(x,y)) { return; }
+	this.data[x][y] = life;
+}
+
+Grid.prototype.toggle = function(x, y) {
+	if(!this.isInBounds(x,y)) { return; }
+	this.data[x][y] = !this.data[x][y];
+}
+
 Grid.prototype.countNeighbors = function(x, y) {
 	var count = 0;
 	count += this.checkAlive(x - 1, y - 1);
@@ -76,14 +86,26 @@ Grid.prototype.update = function() {
 	this.data2 = temp;
 }
 
-Grid.prototype.draw = function(g, cellsize, vstart) {
+Grid.prototype.draw = function(g, cellSize, vstart) {
 	g.save();
 	g.translate(-vstart.x, -vstart.y);
+	
+	//Draw cells
 	this.data.forEach(function(v,i,arr){
 		arr[i].forEach(function(v2, j, arr2){
 			//element i,j
-			g.fillStyle = v2 ? "black" : "white";
-			g.fillRect(i * cellsize, j * cellsize, cellsize, cellsize);
+			g.fillStyle = v2 ? "#420" : "#EEE";
+			g.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
+		})
+	})
+
+	//Draw outlines
+	g.linewidth = 1;
+	g.fillStyle = "black";
+	this.data.forEach(function(v,i,arr){
+		arr[i].forEach(function(v2, j, arr2){
+			//element i,j
+			g.strokeRect(i * cellSize, j * cellSize, cellSize, cellSize);
 		})
 	})
 	g.restore();
@@ -95,17 +117,22 @@ Wrapper.init = function(grid, graphics) {
 	Wrapper.playing = 1;
 	Wrapper.grid = grid;
 	Wrapper.graphics = graphics;
+	Wrapper.cellSize = 30;
+	Wrapper.viewstart = new Vector(0,0);
 }
 
 Wrapper.tick = function() {
 	if(!Wrapper.playing) {return;}
 	Wrapper.grid.update();
-	Wrapper.grid.draw(Wrapper.graphics, 30, new Vector(0,0));
-
+	Wrapper.draw();
 	setTimeout(Wrapper.tick, 200);
 }
 
-Wrapper.play_pause = function () {
+Wrapper.draw = function() {
+	Wrapper.grid.draw(Wrapper.graphics, Wrapper.cellSize, Wrapper.viewstart);
+}
+
+Wrapper.playPause = function () {
 	if(Wrapper.playing) {
 		Wrapper.playing = 0;
 	} else {
@@ -114,11 +141,23 @@ Wrapper.play_pause = function () {
 	Wrapper.tick();
 }
 
+//interprets a click on the canvas
+Wrapper.doClick = function(x, y){
+	x /= Wrapper.cellSize;
+	y /= Wrapper.cellSize;
+	x = Math.floor(x);
+	y = Math.floor(y);
+	console.log(x+ " " + y);
+
+	Wrapper.grid.toggle(x, y);
+	Wrapper.draw();
+}
+
 
 function testtron(g) {
 	slog("foo");
 	console.log("bar");
-	var grid = new Grid(11, 11);
+	var grid = new Grid(19, 19);
 	grid.draw(g, 30, new Vector(0, 0));
 	Wrapper.init(grid, g);
 	Wrapper.tick();

@@ -13,12 +13,22 @@ canvas {
 	float: left;
 	clear: left;
 }
+
+div#ui{
+	margin-left: 30px;
+	float: left;
+}
 </style>
 <meta charset="utf-8"/>
 </head>
 <body onload="init()">
 <div id="debug">Woosp</div>
 <canvas id="canvas" width="600" height="600"></canvas>
+
+<div id="ui">
+	<input value="Start/Stop" type="button" onclick="Wrapper.playPause()"/>
+</div>
+
 <script type="text/javascript" src="vector.js"></script>
 <script type="text/javascript" src="tron.js"></script>
 <script type="text/javascript">
@@ -29,6 +39,13 @@ var CONSTANTS = {};
 CONSTANTS.pixelsperunit = 64;
 
 function init() {
+	var canvas = document.getElementById("canvas");
+	canvas.addEventListener('click', function(event){
+		var rect = canvas.getBoundingClientRect();
+		var x = event.clientX - rect.left;
+		var y = event.clientY - rect.top;
+		Wrapper.doClick(x, y);
+	});
 	console.log("Running code...")
 
 	slog("s");
