@@ -26,7 +26,8 @@ div#ui{
 <canvas id="canvas" width="600" height="600"></canvas>
 
 <div id="ui">
-	<input value="Start/Stop" type="button" onclick="Wrapper.playPause()"/>
+	<input id="pauseButton" value="Pause" type="button" onclick="Wrapper.playPause()"/>
+	<input value="Clear" type="button" onclick="Wrapper.clear()"/>
 </div>
 
 <script type="text/javascript" src="vector.js"></script>

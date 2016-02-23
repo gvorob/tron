@@ -11,10 +11,6 @@ var Grid = function(width, height) {
 	
 	//for testing, fill a circle 2 wide radius 5 from 7,7
 	var foo = 0;
-	function initCell(i,j){
-			foo = !foo;
-			return Number(foo);
-	}
 	//creates a w x h matrix
 	//indexed by x, y from the top
 	this.data = new Array(width);
@@ -24,7 +20,15 @@ var Grid = function(width, height) {
 		this.data2[i] = new Array(height);
 		for(var j = 0; j < height; j++){
 			//element i,j
-			this.data[i][j] = initCell(i,j);
+			this.data[i][j] = 0;
+		}
+	}
+}
+
+Grid.prototype.init = function(f) {
+	for(var i = 0; i < this.width; i++){
+		for(var j = 0; j < this.height; j++){
+			this.data[i][j] = f(i,j);
 		}
 	}
 }
@@ -72,8 +76,8 @@ Grid.prototype.update = function() {
 			//element i,j
 			var c = this.countNeighbors(i, j);
 
-			if(this.data[i][j]) {
-				this.data2[i][j] = c == 3;
+			if(!this.data[i][j]) {
+				this.data2[i][j] = (c == 3);
 			} else {
 				this.data2[i][j] = (c == 3) || (c == 2);
 			}
@@ -116,6 +120,9 @@ var Wrapper = new Object();
 Wrapper.init = function(grid, graphics) {
 	Wrapper.playing = 1;
 	Wrapper.grid = grid;
+	grid.init(function(x,y) {
+		return 0;
+	})
 	Wrapper.graphics = graphics;
 	Wrapper.cellSize = 30;
 	Wrapper.viewstart = new Vector(0,0);
@@ -123,9 +130,13 @@ Wrapper.init = function(grid, graphics) {
 
 Wrapper.tick = function() {
 	if(!Wrapper.playing) {return;}
+	Wrapper.step()
+	setTimeout(Wrapper.tick, 200);
+}
+
+Wrapper.step = function() {
 	Wrapper.grid.update();
 	Wrapper.draw();
-	setTimeout(Wrapper.tick, 200);
 }
 
 Wrapper.draw = function() {
@@ -135,10 +146,17 @@ Wrapper.draw = function() {
 Wrapper.playPause = function () {
 	if(Wrapper.playing) {
 		Wrapper.playing = 0;
+		document.getElementById("pauseButton").value="Play";
 	} else {
 		Wrapper.playing = 1;
+		document.getElementById("pauseButton").value="Pause";
 	}
 	Wrapper.tick();
+}
+
+Wrapper.clear = function () {
+	Wrapper.grid.init(function() { return 0;});
+	Wrapper.draw();
 }
 
 //interprets a click on the canvas
