@@ -66,4 +66,12 @@ Vector.prototype.clone = function(){
 	return new Vector(this.x,this.y);
 }
 
+Vector.prototype.isNaN = function(){
+	return isNaN(this.x) || isNaN(this.y);
+}
+
+Vector.prototype.toString = function(){
+	return "(" + this.x + " ," + this.y + ")\n";
+}
+
 console.log("Done");

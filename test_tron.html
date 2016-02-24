@@ -45,7 +45,16 @@ function init() {
 		var rect = canvas.getBoundingClientRect();
 		var x = event.clientX - rect.left;
 		var y = event.clientY - rect.top;
-		Wrapper.doClick(x, y);
+		Wrapper.doClick(new Vector(x, y));
+	});
+	canvas.addEventListener('mousemove', function(event){
+		var rect = canvas.getBoundingClientRect();
+		var x = event.clientX - rect.left;
+		var y = event.clientY - rect.top;
+		Wrapper.doMove(new Vector(x, y));
+	});
+	canvas.addEventListener('mouseout', function(event){
+		Wrapper.doMouseOut();
 	});
 	console.log("Running code...")
 
@@ -53,7 +62,7 @@ function init() {
 	var c = document.getElementById("canvas");
 	var g = c.getContext("2d");
 	
-	testtron(g)
+	Wrapper.init(new Grid(80, 80), canvas, 16)
 }
 
 
