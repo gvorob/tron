@@ -43,16 +43,29 @@ Grid.prototype.isInBounds = function(x, y) {
 }
 
 
+Grid.prototype.wrap = function(x, size) {
+	if(x < 0) { return x + size; }
+	if(x >= size) {return x - size; }
+	return x;
+}
+
 Grid.prototype.checkAlive = function(x, y) {
-	if(!this.isInBounds(x,y)) { return 0; }
+	if(!this.isInBounds(x,y)) { 
+		x = this.wrap(x, this.width);
+		y = this.wrap(y, this.height);
+	}
 	return this.data[x][y];
 }
 
 Grid.prototype.setAlive = function(x, y, life) {
-	if(!this.isInBounds(x,y)) { return; }
-	this.data[x][y] = life;
+	if(!this.isInBounds(x,y)) { 
+		x = this.wrap(x, this.width);
+		y = this.wrap(y, this.height);
+	}
+	this.dataNext[x][y] = life;
 }
 
+//toggles IMMEDIATELY (for mouse click)
 Grid.prototype.toggle = function(x, y) {
 	if(!this.isInBounds(x,y)) { return; }
 	this.data[x][y] = !this.data[x][y];
@@ -96,25 +109,56 @@ Grid.prototype.updateConway = function() {
 
 //Counts alive cells in a block whose TL is x,y
 Grid.prototype.countBlock = function(x,y) {
+	var count = 0;
+	count += this.checkAlive(x, y);
+	count += this.checkAlive(x + 1, y);
+	count += this.checkAlive(x, y + 1);
+	count += this.checkAlive(x + 1, y + 1);
+	return count;
+}
 
+//Sets all cells in block to x,y
+Grid.prototype.setBlock = function(x,y, life) {
+	this.setAlive(x, y,         life);
+	this.setAlive(x + 1, y,     life);
+	this.setAlive(x, y + 1,     life);
+	this.setAlive(x + 1, y + 1, life);
+}
+
+Grid.prototype.sameBlock = function(x,y, life) {
+	this.setAlive(x, y,         this.checkAlive(x, y));
+	this.setAlive(x + 1, y,     this.checkAlive(x + 1, y));
+	this.setAlive(x, y + 1,     this.checkAlive(x, y + 1));
+	this.setAlive(x + 1, y + 1, this.checkAlive(x + 1, y + 1));
+}
+
+Grid.isEven = function(x,y) {
+	return !(x % 2 || y % 2);
 }
 
 Grid.prototype.updateTron = function() {
-	if(this.width % 2 || this.height % 2) {
+	if(!Grid.isEven(this.width, this.height)) {
 		console.log("Uneven size ")
 		return;
 	}
 
-	for(var i = 0; 2 * i < this.width; i++){
-		for(var j = 0; j < this.height; j++){
-			var c = this.countNeighbors(i, j);
-			if(!this.data[i][j]) {
-				this.dataNext[i][j] = (c == 3);
+	//loop over all blocks, offsetting appropriately each time
+	for(var i = this.margOffset|0; i < this.width + 1; i+=2){
+		for(var j = this.margOffset|0; j < this.height + 1; j+=2){
+			var c = this.countBlock(i, j);
+			if(c == 0) {
+				this.setBlock(i,j,1)
+			} else if(c == 4) {
+				this.setBlock(i,j,0)
 			} else {
-				this.dataNext[i][j] = (c == 3) || (c == 2);
+				this.sameBlock(i,j); //needed to propagate no change into second buffer
 			}
 		}
 	}
+
+	this.margOffset = !this.margOffset;
+
+	this.swapBuffers();
 }
 
 
@@ -176,7 +220,7 @@ Wrapper.tick = function() {
 }
 
 Wrapper.step = function() {
-	Wrapper.grid.updateConway();
+	Wrapper.grid.updateTron();
 	Wrapper.redraw();
 }
 
