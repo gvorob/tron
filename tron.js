@@ -153,9 +153,20 @@ Wrapper.init = function(grid, canvas, cellsize) {
 	Wrapper.cellSize = cellsize;
 	Wrapper.viewStart = new Vector(0,0);
 	Wrapper.mouse = new Vector(0,0);
-	Wrapper.pan.init(60)
+	Wrapper.pan.init(60, 5)
 
-	Wrapper.draw();
+	Wrapper.drawAtFPS(60);
+}
+
+//Redraws the screen at intervals when it gets dirty
+Wrapper.drawAtFPS = function(fps){
+	Wrapper.drawDelay = 1000.0 / fps;
+	setInterval(Wrapper.draw, Wrapper.drawDelay)
+}
+
+//marks the screen as dirty
+Wrapper.redraw = function() {
+	Wrapper.redrawFlag = true;
 }
 
 Wrapper.tick = function() {
@@ -166,15 +177,19 @@ Wrapper.tick = function() {
 
 Wrapper.step = function() {
 	Wrapper.grid.updateConway();
-	Wrapper.draw();
+	Wrapper.redraw();
 }
 
 Wrapper.draw = function() {
 	var w = Wrapper;
+
+	if(!w.redrawFlag) { return; }
 	var g = w.canvas.getContext("2d");
+
+	g.clearRect(0,0,w.canvas.width, w.canvas.height);
 	w.grid.draw(g, w.cellSize, w.viewStart);
 
-
+	//Draw mouse outline
 	if(w.mouse.onScreen && w.grid.isInBounds(w.mouse.x, w.mouse.y)) {
 		g.save();
 		g.translate(-w.viewStart.x, -w.viewStart.y);
@@ -189,12 +204,14 @@ Wrapper.draw = function() {
 		g.restore();
 	}
 
-
-	g.lineWidth = 2;
+	//Draw panning bounds
+	g.lineWidth = 0.5;
 	g.strokeStyle = "#800";
 	for(var i = 0; i < w.pan.zones.length; i++) {
 		w.pan.zones[i].bounds.draw(g);
 	}
+
+	w.redrawFlag = false;
 }
 
 Wrapper.playPause = function () {
@@ -210,7 +227,7 @@ Wrapper.playPause = function () {
 
 Wrapper.clear = function () {
 	Wrapper.grid.init(function() { return 0;});
-	Wrapper.draw();
+	Wrapper.redraw();
 }
 
 Wrapper.mouseToTile = function(v) {
@@ -226,62 +243,77 @@ Wrapper.doClick = function(m){
 	m = Wrapper.mouseToTile(m);
 
 	Wrapper.grid.toggle(m.x, m.y);
-	Wrapper.draw();
+	Wrapper.redraw();
 }
 
 Wrapper.doMove = function(m){
+	Wrapper.mouse.pixelCoords = m.clone();
 	m = Wrapper.mouseToTile(m);
-	Wrapper.pan.doPan();
+	Wrapper.pan.checkPan();
 	Wrapper.mouse.onScreen = true;
 	Wrapper.mouse.setV(m);
-	Wrapper.draw();
+	Wrapper.redraw();
 }
 
 Wrapper.doMouseOut = function(){
 	Wrapper.mouse.onScreen = false;
-	Wrapper.draw();
+	Wrapper.pan.checkPan();
+	Wrapper.redraw();
 }
 
 
 Wrapper.pan = new Object();
-Wrapper.pan.init = function(limit){
+Wrapper.pan.init = function(limit, speed){
 	Wrapper.pan.panLimit = limit; //number of pixels from edge s.t. you pan
+	Wrapper.pan.panSpeed = speed
 
+	Wrapper.pan.panDirection = new Vector(0,0);
+	
 	var cSize = Wrapper.canvas.getBoundingClientRect();
 	var w = cSize.width;
 	var h = cSize.height;
-	var l = limit;
+	var lim = limit;
 
 	Wrapper.pan.zones = [
 		//Left
-		{	bounds:		new Bounds(new Vector(0,0), new Vector(l,h)),
+		{	bounds:		new Bounds(new Vector(0,0), new Vector(lim,h)),
 			direction:	new Vector(-1, 0)},
 		//Top
-		{	bounds:		new Bounds(new Vector(0,0), new Vector(w,l)),
+		{	bounds:		new Bounds(new Vector(0,0), new Vector(w,lim)),
 			direction:	new Vector(0, -1)},
 		//Right
-		{	bounds:		new Bounds(new Vector(w - l, 0), new Vector(l,h)),
+		{	bounds:		new Bounds(new Vector(w - lim, 0), new Vector(lim,h)),
 			direction:	new Vector(1, 0)},
 		//Bottom
-		{	bounds:		new Bounds(new Vector(0, w - l), new Vector(w,l)),
+		{	bounds:		new Bounds(new Vector(0, h - lim), new Vector(w,lim)),
 			direction:	new Vector(0, 1)},
 	];
+
+	Wrapper.pan.doPan();
 }
 
-Wrapper.pan.doPan = function(){
+//Get the direction to pan based on mouse coords
+Wrapper.pan.checkPan = function(){
 	var p = Wrapper.pan;
 
-	console.log("");
 	var result = new Vector(0,0);
-	for(var i = 0; i < p.zones.length; i++) {
-		if(p.zones[i].bounds.contains(Wrapper.mouse)) {
-			result.addV(p.zones[i].direction);
+	if(Wrapper.mouse.onScreen) {
+		for(var i = 0; i < p.zones.length; i++) {
+			if(p.zones[i].bounds.contains(Wrapper.mouse.pixelCoords)) {
+				result.addV(p.zones[i].direction);
+			}
 		}
-			console.log(result);
-			console.log(p.zones[i].direction);
 	}
-			console.log(result);
-	slog(result.toString());
+	Wrapper.pan.panDirection = result;
+}
+
+//Pan the screen every amount of time
+Wrapper.pan.doPan = function() {
+	if(!Wrapper.pan.panDirection.equals(0,0)) {
+		Wrapper.viewStart.addScaledV(Wrapper.pan.panSpeed, Wrapper.pan.panDirection);
+		Wrapper.redraw();
+	}
+	setTimeout(Wrapper.pan.doPan, 20);
 }
 
 function Bounds(pos,size){//pos and size are vectors

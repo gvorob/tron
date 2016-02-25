@@ -74,4 +74,12 @@ Vector.prototype.toString = function(){
 	return "(" + this.x + " ," + this.y + ")\n";
 }
 
+Vector.prototype.equals = function(x,y){
+	return this.x == x && this.y == y
+}
+
+Vector.prototype.equalsV = function(v){
+	return this.equals(v.x, v.y);
+}
+
 console.log("Done");
