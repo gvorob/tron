@@ -123,23 +123,21 @@ Grid.prototype.draw = function(g, cellSize, vstart) {
 	g.translate(-vstart.x, -vstart.y);
 	
 	//Draw cells
-	this.data.forEach(function(v,i,arr){
-		arr[i].forEach(function(v2, j, arr2){
-			//element i,j
-			g.fillStyle = v2 ? "#420" : "#EEE";
-			g.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
-		})
-	})
+	g.fillStyle = "#420"// : "#EEE";
+	for(var i = 0; 2 * i < this.width; i++){
+		for(var j = 0; j < this.height; j++){
+			if(this.data[i][j]) { g.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);}
+		}
+	}
 
 	//Draw outlines
 	g.lineWidth = 1;
 	g.strokeStyle = "#888";
-	this.data.forEach(function(v,i,arr){
-		arr[i].forEach(function(v2, j, arr2){
-			//element i,j
+	for(var i = 0; 2 * i < this.width; i++){
+		for(var j = 0; j < this.height; j++){
 			g.strokeRect(i * cellSize + 0.5, j * cellSize + 0.5, cellSize, cellSize);
-		})
-	})
+		}
+	}
 	g.restore();
 }
 

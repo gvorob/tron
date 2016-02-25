@@ -10,6 +10,7 @@
 canvas {
 	border-style: solid;
 	border-width: 1px;
+	background-color: #EEE;
 	float: left;
 	clear: left;
 }
@@ -23,7 +24,7 @@ div#ui{
 </head>
 <body onload="init()">
 <div id="debug">Woosp</div>
-<canvas id="canvas" width="600" height="600"></canvas>
+<canvas id="canvas" width="1000" height="800"></canvas>
 
 <div id="ui">
 	<input id="pauseButton" value="Pause" type="button" onclick="Wrapper.playPause()"/>
@@ -62,7 +63,7 @@ function init() {
 	var c = document.getElementById("canvas");
 	var g = c.getContext("2d");
 	
-	Wrapper.init(new Grid(80, 80), canvas, 16)
+	Wrapper.init(new Grid(300, 300), canvas, 10)
 }
 
 
