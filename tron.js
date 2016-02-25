@@ -124,7 +124,7 @@ Grid.prototype.draw = function(g, cellSize, vstart) {
 	
 	//Draw cells
 	g.fillStyle = "#420"// : "#EEE";
-	for(var i = 0; 2 * i < this.width; i++){
+	for(var i = 0; i < this.width; i++){
 		for(var j = 0; j < this.height; j++){
 			if(this.data[i][j]) { g.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);}
 		}
@@ -133,7 +133,7 @@ Grid.prototype.draw = function(g, cellSize, vstart) {
 	//Draw outlines
 	g.lineWidth = 1;
 	g.strokeStyle = "#888";
-	for(var i = 0; 2 * i < this.width; i++){
+	for(var i = 0; i < this.width; i++){
 		for(var j = 0; j < this.height; j++){
 			g.strokeRect(i * cellSize + 0.5, j * cellSize + 0.5, cellSize, cellSize);
 		}
