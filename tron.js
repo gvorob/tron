@@ -234,7 +234,7 @@ Grid.prototype.exportRLE = function() {
 
 Grid.parseRLEHeader = function(string) {
 	string = string.replace(/\s+/g,"");
-	params = string.match(/^x=(\d+),y=(\d+)$/);
+	params = string.match(/^x=(\d+),y=(\d+)(,.*)?$/);
 
 	if(params == null) 
 		{throw "malformed header"}
@@ -246,8 +246,9 @@ Grid.parseRLEHeader = function(string) {
 }
 
 Grid.prototype.importRLE = function(string) {
-	var i = 0;
-	var j = 0;
+	var cellAdder = {};
+	cellAdder.x = 0;
+	cellAdder.y = 0;
 	var _this = this; //needed for addNCells
 
 	//cell can be "o", "b", or "$"
@@ -256,13 +257,13 @@ Grid.prototype.importRLE = function(string) {
 
 		//Handle newlines
 		if(cell == "$") {
-			j += n;
-			i = 0;
+			cellAdder.y += n;
+			cellAdder.x = 0;
 		}
 
 		//Handle other cells
 		else {
-			if(j >= _this.width) {return;}
+			if(cellAdder.y >= _this.width) {return;}
 
 			//decode char
 			if		(cell == "o") {cell = 1}
@@ -271,31 +272,39 @@ Grid.prototype.importRLE = function(string) {
 
 			//Add n cells
 			for(var k = 0; k < n; k++) {
-				if(i >= _this.width) {break;}
-				_this.data[i][j] = cell;
-				i++;
+				if(cellAdder.x >= _this.width) {break;}
+				_this.data[cellAdder.x][cellAdder.y] = cell;
+				cellAdder.x++;
 			}
 		}
 	}
 
-	//Parse header
+	//Prepare input
 	var lines = string.split('\n');
-	var size = Grid.parseRLEHeader(lines[0]);
 
-	console.log(size);
+	//Parse out comments
+	var i;
+	for(i = 0; i < lines.length; i++) {
+		if(lines[i].charAt(0) != "#")
+			{break;}
+	}
+	if(i == lines.length) {throw "Header not found";}
+
+	//Parse header
+	var size = Grid.parseRLEHeader(lines[i]);
 	this.makeGrid(size.x, size.y);
 
-	//Prepare body parsing
-	var rest = lines.slice(1).join("");
+	//Prepare body parser
+	var rest = lines.slice(i + 1).join("");
 	var re = /^\s*(!|(\d*)([ob\$]))/;
 	var flag = true;
 	var lastindex = 0;
 
 	//main parse loop
 	while(true) {
-		//Find subsequent matches
+		//Find successive matches
 		var match = re.exec(rest.slice(lastindex));
-		if(match == null) {throw "malformed body";}
+		if(match == null) {throw "malformed body or not '!'-terminated";}
 		if(match[0] == "!") { break;}
 		lastindex += match[0].length;
 
@@ -306,6 +315,7 @@ Grid.prototype.importRLE = function(string) {
 		if(isNaN(runlength)) {throw "failed to parse runlength"}
 
 		//Add cells
+		//console.log(runlength, match[3]);
 		addNCells(runlength, match[3]);
 	}
 
