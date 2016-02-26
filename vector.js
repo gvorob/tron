@@ -4,7 +4,9 @@ function Vector(x,y){
 	if(	undefined == x || 
 		undefined == y ||
 		isNaN(x) ||
-		isNaN(y)
+		isNaN(y) ||
+		typeof x != "number" ||
+		typeof y != "number" 
 	) {
 		throw "Can't create vector (" + x + ", " + y +")";
 	}
@@ -67,7 +69,10 @@ Vector.prototype.clone = function(){
 }
 
 Vector.prototype.isNaN = function(){
-	return isNaN(this.x) || isNaN(this.y);
+	return	this.x == null || 
+			this.y == null || 
+			isNaN(this.x) || 
+			isNaN(this.y);
 }
 
 Vector.prototype.toString = function(){

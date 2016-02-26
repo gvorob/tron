@@ -17,6 +17,7 @@ canvas {
 
 div#ui{
 	margin-left: 30px;
+	width: 100px;
 	float: left;
 }
 </style>
@@ -29,6 +30,9 @@ div#ui{
 <div id="ui">
 	<input id="pauseButton" value="Pause" type="button" onclick="Wrapper.playPause()"/>
 	<input value="Clear" type="button" onclick="Wrapper.clear()"/>
+	<input type="button" value="exportRLE" onclick="document.getElementById('RLEbox').value = Wrapper.grid.exportRLE()"/>
+	<input type="button" value="importRLE" onclick="Wrapper.grid.importRLE(document.getElementById('RLEbox').value)"/>
+	<textarea id="RLEbox"></textarea>
 </div>
 
 <script type="text/javascript" src="vector.js"></script>
@@ -63,7 +67,7 @@ function init() {
 	var c = document.getElementById("canvas");
 	var g = c.getContext("2d");
 	
-	Wrapper.init(new Grid(150, 150), canvas, 8)
+	Wrapper.init(new Grid(10, 10), canvas, 16)
 }
 
 

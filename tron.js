@@ -6,12 +6,14 @@ same state, in which case their states are all reversed
 console.log("Loading tron.js...")
 
 var Grid = function(width, height) {
+	this.makeGrid(width, height);
+}
+
+Grid.prototype.makeGrid = function(width, height) {
 	this.width = width;
 	this.height = height;
 	this.margOffset = false;//-1, -1
-	
-	//for testing, fill a circle 2 wide radius 5 from 7,7
-	var foo = 0;
+
 	//creates a w x h matrix
 	//indexed by x, y from the top
 	this.data = new Array(width);
@@ -185,6 +187,126 @@ Grid.prototype.draw = function(g, cellSize, vstart) {
 	g.restore();
 }
 
+Grid.prototype.exportRLE = function() {
+	var rleString = "x = " + this.width + ", y = " + this.height + "\n";
+	
+	//encode all rows
+	for(var j = 0; j < this.height; j++){
+		//encode one row
+
+		//grab first
+		var last = this.data[0][j]
+		var runlength = 1;
+		//grab rest
+		for(var i = 1; i < this.width; i++) {
+			if(this.data[i][j] == last) {
+				runlength++;
+			} else {
+				if(runlength > 1)
+					rleString += runlength;
+				rleString += last ? "o" : "b";
+				last = this.data[i][j];
+				runlength = 1;
+			}
+		}
+		//do last one
+		if(runlength > 1)
+			rleString += runlength;
+		rleString += last ? "o" : "b";
+		rleString += "$\n";
+	}
+	//terminate RLE
+	if(runlength > 1)
+		rleString += runlength;
+	rleString += last ? "o" : "b";
+	rleString += "$!";
+
+
+	return rleString;
+}
+
+Grid.parseRLEHeader = function(string) {
+	string = string.replace(/\s+/g,"");
+	params = string.match(/^x=(\d+),y=(\d+)$/);
+
+	if(params == null) 
+		{throw "malformed header"}
+	var v = new Vector(parseInt(params[1]), parseInt(params[2]));
+	if(v.isNaN())
+		{throw "malformed header"}
+
+	return v;
+}
+
+Grid.prototype.importRLE = function(string) {
+	var i = 0;
+	var j = 0;
+	var _this = this; //needed for addNCells
+
+	//cell can be "o", "b", or "$"
+	function addNCells(n, cell) {
+		if(n < 0) {throw "negative RLE";}
+
+		//Handle newlines
+		if(cell == "$") {
+			j += n;
+			i = 0;
+		}
+
+		//Handle other cells
+		else {
+			if(j >= _this.width) {return;}
+
+			//decode char
+			if		(cell == "o") {cell = 1}
+			else if	(cell == "b") {cell = 0}
+			else {throw "Cell not in [ob$]";}
+
+			//Add n cells
+			for(var k = 0; k < n; k++) {
+				if(i >= _this.width) {break;}
+				_this.data[i][j] = cell;
+				i++;
+			}
+		}
+	}
+
+	//Parse header
+	var lines = string.split('\n');
+	var size = Grid.parseRLEHeader(lines[0]);
+
+	console.log(size);
+	this.makeGrid(size.x, size.y);
+
+	//Prepare body parsing
+	var rest = lines.slice(1).join("");
+	var re = /^\s*(!|(\d*)([ob\$]))/;
+	var flag = true;
+	var lastindex = 0;
+
+	//main parse loop
+	while(true) {
+		//Find subsequent matches
+		var match = re.exec(rest.slice(lastindex));
+		if(match == null) {throw "malformed body";}
+		if(match[0] == "!") { break;}
+		lastindex += match[0].length;
+
+		//Parse run length
+		var runlength;
+		if(match[2] == "") { runlength = 1;}
+		else { runlength = parseInt(match[2]); }
+		if(isNaN(runlength)) {throw "failed to parse runlength"}
+
+		//Add cells
+		addNCells(runlength, match[3]);
+	}
+
+	Wrapper.redraw();
+}
+
+
+
 var Wrapper = new Object();
 
 Wrapper.init = function(grid, canvas, cellsize) {
@@ -199,6 +321,7 @@ Wrapper.init = function(grid, canvas, cellsize) {
 	Wrapper.mouse = new Vector(0,0);
 	Wrapper.pan.init(60, 5)
 
+	Wrapper.redraw();
 	Wrapper.drawAtFPS(60);
 }
 
@@ -220,7 +343,7 @@ Wrapper.tick = function() {
 }
 
 Wrapper.step = function() {
-	Wrapper.grid.updateTron();
+	Wrapper.grid.updateConway();
 	Wrapper.redraw();
 }
 
