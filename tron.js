@@ -179,10 +179,17 @@ Grid.prototype.draw = function(g, cellSize, vstart) {
 	//Draw outlines
 	g.lineWidth = 1;
 	g.strokeStyle = "#888";
-	for(var i = 0; i < this.width; i++){
-		for(var j = 0; j < this.height; j++){
-			g.strokeRect(i * cellSize + 0.5, j * cellSize + 0.5, cellSize, cellSize);
-		}
+	for(var i = 0; i <= this.width; i++){
+		g.beginPath();
+		g.moveTo(i * cellSize + 0.5, 0)
+		g.lineTo(i * cellSize + 0.5, this.height * cellSize);
+		g.stroke()
+	}
+	for(var j = 0; j <= this.height; j++){
+		g.beginPath();
+		g.moveTo(0, j * cellSize + 0.5)
+		g.lineTo(this.width * cellSize, j * cellSize + 0.5);
+		g.stroke()
 	}
 	g.restore();
 }
@@ -361,7 +368,7 @@ Wrapper.draw = function() {
 		g.save();
 		g.translate(-w.viewStart.x, -w.viewStart.y);
 		
-		//Draw outlines
+		//Draw outline
 		g.lineWidth = 5;
 		g.strokeStyle = "#0A0";
 		g.strokeRect(
