@@ -33,7 +33,6 @@ canvas {
 <meta charset="utf-8"/>
 </head>
 <body>
-<div id="debug">Woosp</div>
 <canvas id="main_canvas" width="1000" height="800"></canvas>
 
 <div id="ui">
@@ -61,9 +60,9 @@ canvas {
 
 console.log("Loading main js...")
 
-function slog(x) {$("div#debug").html(x);}
 var CONSTANTS = {};
 CONSTANTS.pixelsperunit = 64;
+var UI = {};
 
 //get/set x/y val as a vector
 function xyFormVal(formObj, vect_val) {
@@ -79,33 +78,38 @@ function xyFormVal(formObj, vect_val) {
 }
 
 function init() {
-	var canvas = document.getElementById("main_canvas");
-	$("canvas#main_canvas").click(function(event){
-		var rect = canvas.getBoundingClientRect();
+	UI.canvas = $("canvas#main_canvas");
+	UI.canvas.click(function(event){
+		var rect = UI.canvas[0].getBoundingClientRect();
 		var x = event.clientX - rect.left;
 		var y = event.clientY - rect.top;
 		Wrapper.doClick(new Vector(x, y));
 	});
-	canvas.addEventListener('mousemove', function(event){
-		var rect = canvas.getBoundingClientRect();
+	UI.canvas.mousemove(function(event){
+		var rect = UI.canvas[0].getBoundingClientRect();
 		var x = event.clientX - rect.left;
 		var y = event.clientY - rect.top;
 		Wrapper.doMove(new Vector(x, y));
 	});
-	canvas.addEventListener('mouseout', function(event){
+	UI.canvas.mouseout(function(event){
 		Wrapper.doMouseOut();
 	});
-	$("#xy_resize_form").change(function(event){
-		if(!Wrapper.tryResize(xyFormVal($("form#xy_resize_form")))) {
-			xyFormVal($("form#xy_resize_form"), Wrapper.getGridSize());
-		}
+
+	UI.resize_form = $("form#xy_resize_form");
+	UI.resize_form.change(function(event){
+		var success = Wrapper.tryResize(xyFormVal(UI.resize_form));
+		if(!success) //If failed, reset input back to actual size
+			{ xyFormVal(UI.resize_form, Wrapper.getGridSize()); }
 	});
+
 	console.log("Running code...")
 
-	slog("s");
-	var g = canvas.getContext("2d");
+	var g = UI.canvas[0].getContext("2d");
 	
-	Wrapper.init(new Grid(new Vector(10, 10)), canvas, 16)
+	Wrapper.init(new Grid(new Vector(10, 10)), UI.canvas[0], 16)
+
+	//Init all options to their actual values
+	xyFormVal(UI.resize_form, Wrapper.getGridSize());
 }
 
 
