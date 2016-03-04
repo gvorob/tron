@@ -372,9 +372,7 @@ var Wrapper = function(){
 
 
 	//marks the screen as dirty
-	function redraw() {
-		redrawFlag = true;
-	}
+	function redraw() { redrawFlag = true; }
 
 	function tick() {
 		if(!playing) {return;}
@@ -427,10 +425,10 @@ var Wrapper = function(){
 		return Vector.floor(v2);
 	}
 
-
 	pan.init = function(limit, speed){
 		pan.panLimit = limit; //number of pixels from edge s.t. you pan
 		pan.panSpeed = speed
+		pan.intervalMillis = 20;
 
 		pan.panDirection = new Vector(0,0);
 		
@@ -454,6 +452,7 @@ var Wrapper = function(){
 				direction:	new Vector(0, 1)},
 		];
 
+		//slides the screen repeatedly if need be
 		pan.doPan();
 	}
 
@@ -476,7 +475,7 @@ var Wrapper = function(){
 			viewStart.addScaledV(pan.panSpeed, pan.panDirection);
 			redraw();
 		}
-		setTimeout(pan.doPan, 20);
+		setTimeout(pan.doPan, pan.intervalMillis);
 	}
 
 	function Bounds(pos,size){//pos and size are vectors
