@@ -340,213 +340,223 @@ Grid.prototype.importRLE = function(string) {
 		addNCells(runlength, match[3]);
 	}
 
-	Wrapper.redraw();
 }
 
 
 
-var Wrapper = new Object();
+var Wrapper = function(){
+	var playing = 0;
+	var grid, canvas, cellsize;
+	var viewStart = new Vector(0,0);
+	var mouse = new Vector(0,0);
+	var pan = {}
 
-Wrapper.init = function(grid, canvas, cellsize) {
-	Wrapper.playing = 0;
-	Wrapper.grid = grid;
-	grid.init(function(x,y) {
-		return 0;
-	})
-	Wrapper.canvas = canvas;
-	Wrapper.cellSize = cellsize;
-	Wrapper.viewStart = new Vector(0,0);
-	Wrapper.mouse = new Vector(0,0);
-	Wrapper.pan.init(60, 5)
+	function init(in_grid, in_canvas, in_cellsize) {
+		grid = in_grid;
+		grid.init(function(x,y) {
+			return 0;
+		})
+		canvas = in_canvas;
+		cellSize = in_cellsize;
+		pan.init(60, 5)
 
-	Wrapper.redraw();
-	Wrapper.drawAtFPS(60);
-}
+		redraw();
+		drawAtFPS(60);
+	}
 
-//Redraws the screen at intervals when it gets dirty
-Wrapper.drawAtFPS = function(fps){
-	Wrapper.drawDelay = 1000.0 / fps;
-	setInterval(Wrapper.draw, Wrapper.drawDelay)
-}
+	//Redraws the screen at intervals when it gets dirty
+	function drawAtFPS(fps){
+		var drawDelay = 1000.0 / fps;
+		setInterval(draw, drawDelay)
+	}
 
 
-//marks the screen as dirty
-Wrapper.redraw = function() {
-	Wrapper.redrawFlag = true;
-}
+	//marks the screen as dirty
+	function redraw() {
+		redrawFlag = true;
+	}
 
-Wrapper.tick = function() {
-	if(!Wrapper.playing) {return;}
-	Wrapper.step()
-	setTimeout(Wrapper.tick, 200);
-}
+	function tick() {
+		if(!playing) {return;}
+		step()
+		setTimeout(tick, 200);
+	}
 
-Wrapper.step = function() {
-	Wrapper.grid.updateConway();
-	Wrapper.redraw();
-}
+	function step() {
+		grid.updateConway();
+		redraw();
+	}
 
-Wrapper.draw = function() {
-	var w = Wrapper;
+	function draw() {
+		if(!redrawFlag) { return; }
+		var g = canvas.getContext("2d");
 
-	if(!w.redrawFlag) { return; }
-	var g = w.canvas.getContext("2d");
+		g.clearRect(0,0, canvas.width, canvas.height);
+		grid.draw(g, cellSize, viewStart);
 
-	g.clearRect(0,0,w.canvas.width, w.canvas.height);
-	w.grid.draw(g, w.cellSize, w.viewStart);
+		//Draw mouse outline
+		if(mouse.onScreen && grid.isInBounds(mouse.x, mouse.y)) {
+			g.save();
+			g.translate(-viewStart.x, -viewStart.y);
+			
+			//Draw outline
+			g.lineWidth = 5;
+			g.strokeStyle = "#0A0";
+			g.strokeRect(
+					mouse.x * cellSize + 0.5, 
+					mouse.y * cellSize + 0.5, 
+					cellSize, cellSize);
+			g.restore();
+		}
 
-	//Draw mouse outline
-	if(w.mouse.onScreen && w.grid.isInBounds(w.mouse.x, w.mouse.y)) {
-		g.save();
-		g.translate(-w.viewStart.x, -w.viewStart.y);
+		//Draw panning bounds
+		g.lineWidth = 0.5;
+		g.strokeStyle = "#800";
+		for(var i = 0; i < pan.zones.length; i++) {
+			pan.zones[i].bounds.draw(g);
+		}
+
+		redrawFlag = false;
+	}
+
+	function mouseToTile(v) {
+		var v2 = v.clone();
+		v2.addV(viewStart);
+		v2.scale(1 / cellSize);
+
+		return Vector.floor(v2);
+	}
+
+
+	pan.init = function(limit, speed){
+		pan.panLimit = limit; //number of pixels from edge s.t. you pan
+		pan.panSpeed = speed
+
+		pan.panDirection = new Vector(0,0);
 		
-		//Draw outline
-		g.lineWidth = 5;
-		g.strokeStyle = "#0A0";
-		g.strokeRect(
-				w.mouse.x * w.cellSize + 0.5, 
-				w.mouse.y * w.cellSize + 0.5, 
-				w.cellSize, w.cellSize);
-		g.restore();
+		var cSize = canvas.getBoundingClientRect();
+		var w = cSize.width;
+		var h = cSize.height;
+		var lim = limit;
+
+		pan.zones = [
+			//Left
+			{	bounds:		new Bounds(new Vector(0,0), new Vector(lim,h)),
+				direction:	new Vector(-1, 0)},
+			//Top
+			{	bounds:		new Bounds(new Vector(0,0), new Vector(w,lim)),
+				direction:	new Vector(0, -1)},
+			//Right
+			{	bounds:		new Bounds(new Vector(w - lim, 0), new Vector(lim,h)),
+				direction:	new Vector(1, 0)},
+			//Bottom
+			{	bounds:		new Bounds(new Vector(0, h - lim), new Vector(w,lim)),
+				direction:	new Vector(0, 1)},
+		];
+
+		pan.doPan();
 	}
 
-	//Draw panning bounds
-	g.lineWidth = 0.5;
-	g.strokeStyle = "#800";
-	for(var i = 0; i < w.pan.zones.length; i++) {
-		w.pan.zones[i].bounds.draw(g);
-	}
-
-	w.redrawFlag = false;
-}
-
-
-Wrapper.pan = new Object();
-Wrapper.pan.init = function(limit, speed){
-	Wrapper.pan.panLimit = limit; //number of pixels from edge s.t. you pan
-	Wrapper.pan.panSpeed = speed
-
-	Wrapper.pan.panDirection = new Vector(0,0);
-	
-	var cSize = Wrapper.canvas.getBoundingClientRect();
-	var w = cSize.width;
-	var h = cSize.height;
-	var lim = limit;
-
-	Wrapper.pan.zones = [
-		//Left
-		{	bounds:		new Bounds(new Vector(0,0), new Vector(lim,h)),
-			direction:	new Vector(-1, 0)},
-		//Top
-		{	bounds:		new Bounds(new Vector(0,0), new Vector(w,lim)),
-			direction:	new Vector(0, -1)},
-		//Right
-		{	bounds:		new Bounds(new Vector(w - lim, 0), new Vector(lim,h)),
-			direction:	new Vector(1, 0)},
-		//Bottom
-		{	bounds:		new Bounds(new Vector(0, h - lim), new Vector(w,lim)),
-			direction:	new Vector(0, 1)},
-	];
-
-	Wrapper.pan.doPan();
-}
-
-//Get the direction to pan based on mouse coords
-Wrapper.pan.checkPan = function(){
-	var p = Wrapper.pan;
-
-	var result = new Vector(0,0);
-	if(Wrapper.mouse.onScreen) {
-		for(var i = 0; i < p.zones.length; i++) {
-			if(p.zones[i].bounds.contains(Wrapper.mouse.pixelCoords)) {
-				result.addV(p.zones[i].direction);
+	//Get the direction to pan based on mouse coords
+	pan.checkPan = function(){
+		var result = new Vector(0,0);
+		if(mouse.onScreen) {
+			for(var i = 0; i < pan.zones.length; i++) {
+				if(pan.zones[i].bounds.contains(mouse.pixelCoords)) {
+					result.addV(pan.zones[i].direction);
+				}
 			}
 		}
+		pan.panDirection = result;
 	}
-	Wrapper.pan.panDirection = result;
-}
 
-//Pan the screen every amount of time
-Wrapper.pan.doPan = function() {
-	if(!Wrapper.pan.panDirection.equals(0,0)) {
-		Wrapper.viewStart.addScaledV(Wrapper.pan.panSpeed, Wrapper.pan.panDirection);
-		Wrapper.redraw();
+	//Pan the screen every amount of time
+	pan.doPan = function() {
+		if(!pan.panDirection.equals(0,0)) {
+			viewStart.addScaledV(pan.panSpeed, pan.panDirection);
+			redraw();
+		}
+		setTimeout(pan.doPan, 20);
 	}
-	setTimeout(Wrapper.pan.doPan, 20);
-}
 
-function Bounds(pos,size){//pos and size are vectors
-	this.pos = pos;
-	this.size = size;}
-Bounds.prototype.contains = function(pos){
-	return pos.x > this.pos.x && pos.y > this.pos.y && pos.x < this.pos.x + this.size.x && pos.y < this.pos.y + this.size.y;}
-Bounds.prototype.draw = function(g){
-	g.strokeRect(this.pos.x, this.pos.y, this.size.x, this.size.y);
-}
-
-
-//Public wrapper functions
-
-Wrapper.playPause = function () {
-	if(Wrapper.playing) {
-		Wrapper.playing = 0;
-		document.getElementById("pauseButton").value="Play";
-	} else {
-		Wrapper.playing = 1;
-		document.getElementById("pauseButton").value="Pause";
+	function Bounds(pos,size){//pos and size are vectors
+		this.pos = pos;
+		this.size = size;}
+	Bounds.prototype.contains = function(pos){
+		return pos.x > this.pos.x && pos.y > this.pos.y && pos.x < this.pos.x + this.size.x && pos.y < this.pos.y + this.size.y;}
+	Bounds.prototype.draw = function(g){
+		g.strokeRect(this.pos.x, this.pos.y, this.size.x, this.size.y);
 	}
-	Wrapper.tick();
-}
 
-Wrapper.clear = function () {
-	Wrapper.grid.init(function() { return 0;});
-	Wrapper.redraw();
-}
-
-Wrapper.mouseToTile = function(v) {
-	var v2 = v.clone();
-	v2.addV( Wrapper.viewStart);
-	v2.scale(1. / Wrapper.cellSize);
-
-	return Vector.floor(v2);
-}
-
-//interprets a click on the canvas
-Wrapper.doClick = function(m){
-	m = Wrapper.mouseToTile(m);
-
-	Wrapper.grid.toggle(m.x, m.y);
-	Wrapper.redraw();
-}
-
-Wrapper.doMove = function(m){
-	Wrapper.mouse.pixelCoords = m.clone();
-	m = Wrapper.mouseToTile(m);
-	Wrapper.pan.checkPan();
-	Wrapper.mouse.onScreen = true;
-	Wrapper.mouse.setV(m);
-	Wrapper.redraw();
-}
-
-Wrapper.doMouseOut = function(){
-	Wrapper.mouse.onScreen = false;
-	Wrapper.pan.checkPan();
-	Wrapper.redraw();
-}
-
-//returns true or false if succeeded
-Wrapper.tryResize = function(vec_size) {
-	if(Grid.checkValidGridSize(vec_size)) {
-		Wrapper.grid.resizeGrid(vec_size);
-		Wrapper.redraw()
-		return true;
-	} else {
-		return false;
+	function playPause () {
+		if(playing) {
+			playing = 0;
+			document.getElementById("pauseButton").value="Play";
+		} else {
+			playing = 1;
+			document.getElementById("pauseButton").value="Pause";
+		}
+		tick();
 	}
-}
 
-Wrapper.getGridSize = function() {
-	return Wrapper.grid.size;
-}
+	function clear () {
+		grid.init(function() { return 0;});
+		redraw();
+	}
+
+	//interprets a click on the canvas
+	function doClick(m){
+		m = mouseToTile(m);
+
+		grid.toggle(m.x, m.y);
+		redraw();
+	}
+
+	function doMove(m){
+		mouse.pixelCoords = m.clone();
+		m = mouseToTile(m);
+		pan.checkPan();
+		mouse.onScreen = true;
+		mouse.setV(m);
+		redraw();
+	}
+
+	function doMouseOut(){
+		mouse.onScreen = false;
+		pan.checkPan();
+		redraw();
+	}
+
+	//returns true or false if succeeded
+	function tryResize(vec_size) {
+		if(Grid.checkValidGridSize(vec_size)) {
+			grid.resizeGrid(vec_size);
+			redraw()
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	function getGridSize() {return grid.size;}
+	function exportRLE()     {return grid.exportRLE();}
+
+	function importRLE(data) {
+		grid.importRLE(data);
+		redraw();
+	}
+	
+	return {
+		init:           init,
+		playPause:      playPause,
+		clear:          clear,
+		doClick:        doClick,
+		doMove:         doMove,
+		doMouseOut:     doMouseOut,
+		tryResize:      tryResize,
+		getGridSize:    getGridSize,
+		exportRLE:      exportRLE,
+		importRLE:      importRLE};
+}();
 
 console.log("Done");

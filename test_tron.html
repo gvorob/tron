@@ -60,10 +60,10 @@ input.num_input{
 	</div>
 	<div id="rle" class="ui_group">
 		<div>
-			<input class="" type="button" value="exportRLE" onclick="document.getElementById('RLEbox').value = Wrapper.grid.exportRLE()"/>
-			<input class="" type="button" value="importRLE" onclick="Wrapper.grid.importRLE(document.getElementById('RLEbox').value)"/>
+			<input class="" type="button" id="rle_export" value="export RLE" />
+			<input class="" type="button" id="rle_import" value="import RLE" />
 		</div>
-		<textarea id="RLEbox"></textarea>
+		<textarea id="rle_data"></textarea>
 	</div>
 	<div class="ui_group">
 		<div> Cell size: <input id="cellsize" class="num_input" type="number"/></div>
@@ -112,8 +112,14 @@ function getCanvasClick(j_canvas, event) {
 }
 
 function init() {
-	//Setup canvas mouse events
 	UI.canvas = $("canvas#main_canvas");
+	UI.resize_form = $("form#xy_resize");
+	UI.cellsize_input = $("input#cellsize");
+	UI.rle_import_input = $("input#rle_import");
+	UI.rle_export_input = $("input#rle_export");
+	UI.rle_data = $("textarea#rle_data");
+
+	//Setup canvas mouse events
 	UI.canvas.click(function(event){
 		Wrapper.doClick(getCanvasClick(UI.canvas, event));});
 	UI.canvas.mousemove(function(event){
@@ -122,14 +128,16 @@ function init() {
 		Wrapper.doMouseOut();});
 
 	//Setup option UI events
-	UI.resize_form = $("form#xy_resize");
+	UI.rle_import_input.click(function(event) {
+		Wrapper.importRLE(UI.rle_data.val());});
+	UI.rle_export_input.click(function(event) {
+		UI.rle_data.val(Wrapper.exportRLE());});
 	UI.resize_form.change(function(event){
 		var success = Wrapper.tryResize(xyFormProp(UI.resize_form));
 		if(!success) //If failed, reset input back to actual size
 			{ xyFormProp(UI.resize_form, Wrapper.getGridSize()); }
 	});
 
-	UI.cellsize_input = $("input#cellsize");
 	UI.cellsize_input.change(function(event){
 		if(UI.cellsize_input.val() < 0) {
 			console.log(1);
