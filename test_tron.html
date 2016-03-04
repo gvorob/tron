@@ -15,38 +15,72 @@ canvas {
 	clear: left;
 }
 
-div#ui{
+#ui{
 	margin-left: 30px;
-	width: 100px;
+	width: 200px;
+	float: left;
+}
+
+.row{
+	float: left;
+}
+
+.num_input{
+	width: 50px;
 	float: left;
 }
 </style>
 <meta charset="utf-8"/>
 </head>
-<body onload="init()">
+<body>
 <div id="debug">Woosp</div>
-<canvas id="canvas" width="1000" height="800"></canvas>
+<canvas id="main_canvas" width="1000" height="800"></canvas>
 
 <div id="ui">
-	<input id="pauseButton" value="Pause" type="button" onclick="Wrapper.playPause()"/>
+	<div>
+		<input id="pauseButton" value="Play" type="button" onclick="Wrapper.playPause()"/>
+	</div>
 	<input value="Clear" type="button" onclick="Wrapper.clear()"/>
-	<input type="button" value="exportRLE" onclick="document.getElementById('RLEbox').value = Wrapper.grid.exportRLE()"/>
-	<input type="button" value="importRLE" onclick="Wrapper.grid.importRLE(document.getElementById('RLEbox').value)"/>
+	<div id="resize">
+		<form id="xy_resize_form">
+			<input class="num_input x" value="24" type="number"/>
+			<input class="num_input y" value="24" type="number"/>
+		</form>
+	</div>
+	<div>
+		<input class="row" type="button" value="exportRLE" onclick="document.getElementById('RLEbox').value = Wrapper.grid.exportRLE()"/>
+		<input class="row" type="button" value="importRLE" onclick="Wrapper.grid.importRLE(document.getElementById('RLEbox').value)"/>
+	</div>
 	<textarea id="RLEbox"></textarea>
 </div>
 
+<script type="text/javascript" src="jquery-1.12.1.js"></script>
 <script type="text/javascript" src="vector.js"></script>
 <script type="text/javascript" src="tron.js"></script>
 <script type="text/javascript">
+
 console.log("Loading main js...")
 
-function slog(x) {document.getElementById("debug").innerHTML = x;}
+function slog(x) {$("div#debug").html(x);}
 var CONSTANTS = {};
 CONSTANTS.pixelsperunit = 64;
 
+//get/set x/y val as a vector
+function xyFormVal(formObj, vect_val) {
+	if(formObj == null) { throw "Null ptr in xyFormVal";}
+	if(vect_val === undefined) {
+		return new Vector(
+			0|formObj.find("input.x").val(),
+			0|formObj.find("input.y").val());
+	} else {
+			formObj.find("input.x").val(vect_val.x);
+			formObj.find("input.y").val(vect_val.y);
+	}
+}
+
 function init() {
-	var canvas = document.getElementById("canvas");
-	canvas.addEventListener('click', function(event){
+	var canvas = document.getElementById("main_canvas");
+	$("canvas#main_canvas").click(function(event){
 		var rect = canvas.getBoundingClientRect();
 		var x = event.clientX - rect.left;
 		var y = event.clientY - rect.top;
@@ -61,18 +95,24 @@ function init() {
 	canvas.addEventListener('mouseout', function(event){
 		Wrapper.doMouseOut();
 	});
+	$("#xy_resize_form").change(function(event){
+		if(!Wrapper.tryResize(xyFormVal($("form#xy_resize_form")))) {
+			xyFormVal($("form#xy_resize_form"), Wrapper.getGridSize());
+		}
+	});
 	console.log("Running code...")
 
 	slog("s");
-	var c = document.getElementById("canvas");
-	var g = c.getContext("2d");
+	var g = canvas.getContext("2d");
 	
-	Wrapper.init(new Grid(10, 10), canvas, 16)
+	Wrapper.init(new Grid(new Vector(10, 10)), canvas, 16)
 }
 
 
 console.log("Done");
 
+
+$(document).ready(init);
 </script>
 
 </body>

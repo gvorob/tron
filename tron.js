@@ -5,33 +5,54 @@ same state, in which case their states are all reversed
 
 console.log("Loading tron.js...")
 
-var Grid = function(width, height) {
-	this.makeGrid(width, height);
+var Grid = function(size) {
+	this.makeGrid(size);
 }
 
-Grid.prototype.makeGrid = function(width, height) {
-	this.width = width;
-	this.height = height;
+Grid.checkValidGridSize = function(size) {
+	return size.isInt() && 
+			!size.isNaN() &&
+			size.x >= 1 &&
+			size.y >= 1;
+}
+
+Grid.prototype.makeGrid = function(size) {
+	if(!Grid.checkValidGridSize(size)) throw "Invalid size in makeGrid";
+	this.size = size.clone();
 	this.margOffset = false;//-1, -1
 
 	//creates a w x h matrix
 	//indexed by x, y from the top
-	this.data = new Array(width);
-	this.dataNext = new Array(width);
-	for(var i = 0; i < width; i++){
-		this.data[i] = new Array(height);
-		this.dataNext[i] = new Array(height);
-		for(var j = 0; j < height; j++){
+	this.data = new Array(size.x);
+	this.dataNext = new Array(size.x);
+	for(var i = 0; i < size.x; i++){
+		this.data[i] = new Array(size.y);
+		this.dataNext[i] = new Array(size.y);
+		for(var j = 0; j < size.y; j++){
 			//element i,j
 			this.data[i][j] = 0;
 		}
 	}
 }
 
-Grid.prototype.init = function(f) {
-	for(var i = 0; i < this.width; i++){
-		for(var j = 0; j < this.height; j++){
-			this.data[i][j] = f(i,j);
+Grid.prototype.resizeGrid = function(size) {
+	if(!Grid.checkValidGridSize(size)) throw "Invalid size in resizeGrid";
+	var dataOld = this.data;
+	var copyW = Math.min(this.size.x, size.x);
+	var copyH = Math.min(this.size.y, size.y);
+	this.makeGrid(size);
+	for(var i = 0; i < copyW; i++){
+		for(var j = 0; j < copyH; j++){
+			this.data[i][j] = dataOld[i][j];
+		}
+	}
+}
+
+//init every cell with a 2-element function
+Grid.prototype.init = function(in_func) {
+	for(var i = 0; i < this.size.x; i++){
+		for(var j = 0; j < this.size.y; j++){
+			this.data[i][j] = in_func(i,j);
 		}
 	}
 }
@@ -40,12 +61,12 @@ Grid.prototype.isInBounds = function(x, y) {
 	return (
 		x >= 0 &&
 		y >= 0 &&
-		x < this.width &&
-		y < this.height);
+		x < this.size.x &&
+		y < this.size.y);
 }
 
 
-Grid.prototype.wrap = function(x, size) {
+Grid.wrap = function(x, size) {
 	if(x < 0) { return x + size; }
 	if(x >= size) {return x - size; }
 	return x;
@@ -53,16 +74,16 @@ Grid.prototype.wrap = function(x, size) {
 
 Grid.prototype.checkAlive = function(x, y) {
 	if(!this.isInBounds(x,y)) { 
-		x = this.wrap(x, this.width);
-		y = this.wrap(y, this.height);
+		x = Grid.wrap(x, this.size.x);
+		y = Grid.wrap(y, this.size.y);
 	}
 	return this.data[x][y];
 }
 
 Grid.prototype.setAlive = function(x, y, life) {
 	if(!this.isInBounds(x,y)) { 
-		x = this.wrap(x, this.width);
-		y = this.wrap(y, this.height);
+		x = this.wrap(x, this.size.x);
+		y = this.wrap(y, this.size.y);
 	}
 	this.dataNext[x][y] = life;
 }
@@ -94,8 +115,8 @@ Grid.prototype.countNeighbors = function(x, y) {
 
 
 Grid.prototype.updateConway = function() {
-	for(var i = 0; i < this.width; i++){
-		for(var j = 0; j < this.height; j++){
+	for(var i = 0; i < this.size.x; i++){
+		for(var j = 0; j < this.size.y; j++){
 
 			var count = this.countNeighbors(i, j);
 			if(!this.data[i][j]) {
@@ -139,14 +160,14 @@ Grid.isEven = function(x,y) {
 }
 
 Grid.prototype.updateTron = function() {
-	if(!Grid.isEven(this.width, this.height)) {
+	if(!Grid.isEven(this.size.x, this.size.y)) {
 		console.log("Uneven size ")
 		return;
 	}
 
 	//loop over all blocks, offsetting appropriately each time
-	for(var i = this.margOffset|0; i < this.width + 1; i+=2){
-		for(var j = this.margOffset|0; j < this.height + 1; j+=2){
+	for(var i = this.margOffset|0; i < this.size.x + 1; i+=2){
+		for(var j = this.margOffset|0; j < this.size.y + 1; j+=2){
 			var c = this.countBlock(i, j);
 			if(c == 0) {
 				this.setBlock(i,j,1)
@@ -170,8 +191,8 @@ Grid.prototype.draw = function(g, cellSize, vstart) {
 	
 	//Draw cells
 	g.fillStyle = "#420"// : "#EEE";
-	for(var i = 0; i < this.width; i++){
-		for(var j = 0; j < this.height; j++){
+	for(var i = 0; i < this.size.x; i++){
+		for(var j = 0; j < this.size.y; j++){
 			if(this.data[i][j]) { g.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);}
 		}
 	}
@@ -179,33 +200,33 @@ Grid.prototype.draw = function(g, cellSize, vstart) {
 	//Draw outlines
 	g.lineWidth = 1;
 	g.strokeStyle = "#888";
-	for(var i = 0; i <= this.width; i++){
+	for(var i = 0; i <= this.size.x; i++){
 		g.beginPath();
 		g.moveTo(i * cellSize + 0.5, 0)
-		g.lineTo(i * cellSize + 0.5, this.height * cellSize);
+		g.lineTo(i * cellSize + 0.5, this.size.y * cellSize);
 		g.stroke()
 	}
-	for(var j = 0; j <= this.height; j++){
+	for(var j = 0; j <= this.size.y; j++){
 		g.beginPath();
 		g.moveTo(0, j * cellSize + 0.5)
-		g.lineTo(this.width * cellSize, j * cellSize + 0.5);
+		g.lineTo(this.size.x * cellSize, j * cellSize + 0.5);
 		g.stroke()
 	}
 	g.restore();
 }
 
 Grid.prototype.exportRLE = function() {
-	var rleString = "x = " + this.width + ", y = " + this.height + "\n";
+	var rleString = "x = " + this.size.x + ", y = " + this.size.y + "\n";
 	
 	//encode all rows
-	for(var j = 0; j < this.height; j++){
+	for(var j = 0; j < this.size.y; j++){
 		//encode one row
 
 		//grab first
 		var last = this.data[0][j]
 		var runlength = 1;
 		//grab rest
-		for(var i = 1; i < this.width; i++) {
+		for(var i = 1; i < this.size.x; i++) {
 			if(this.data[i][j] == last) {
 				runlength++;
 			} else {
@@ -263,7 +284,7 @@ Grid.prototype.importRLE = function(string) {
 
 		//Handle other cells
 		else {
-			if(cellAdder.y >= _this.width) {return;}
+			if(cellAdder.y >= _this.size.y) {return;}
 
 			//decode char
 			if		(cell == "o") {cell = 1}
@@ -272,7 +293,7 @@ Grid.prototype.importRLE = function(string) {
 
 			//Add n cells
 			for(var k = 0; k < n; k++) {
-				if(cellAdder.x >= _this.width) {break;}
+				if(cellAdder.x >= _this.size.x) {break;}
 				_this.data[cellAdder.x][cellAdder.y] = cell;
 				cellAdder.x++;
 			}
@@ -290,9 +311,9 @@ Grid.prototype.importRLE = function(string) {
 	}
 	if(i == lines.length) {throw "Header not found";}
 
-	//Parse header
+	//Parse header, remake grid
 	var size = Grid.parseRLEHeader(lines[i]);
-	this.makeGrid(size.x, size.y);
+	this.makeGrid(size);
 
 	//Prepare body parser
 	var rest = lines.slice(i + 1).join("");
@@ -327,7 +348,7 @@ Grid.prototype.importRLE = function(string) {
 var Wrapper = new Object();
 
 Wrapper.init = function(grid, canvas, cellsize) {
-	Wrapper.playing = 1;
+	Wrapper.playing = 0;
 	Wrapper.grid = grid;
 	grid.init(function(x,y) {
 		return 0;
@@ -347,6 +368,7 @@ Wrapper.drawAtFPS = function(fps){
 	Wrapper.drawDelay = 1000.0 / fps;
 	setInterval(Wrapper.draw, Wrapper.drawDelay)
 }
+
 
 //marks the screen as dirty
 Wrapper.redraw = function() {
@@ -396,53 +418,6 @@ Wrapper.draw = function() {
 	}
 
 	w.redrawFlag = false;
-}
-
-Wrapper.playPause = function () {
-	if(Wrapper.playing) {
-		Wrapper.playing = 0;
-		document.getElementById("pauseButton").value="Play";
-	} else {
-		Wrapper.playing = 1;
-		document.getElementById("pauseButton").value="Pause";
-	}
-	Wrapper.tick();
-}
-
-Wrapper.clear = function () {
-	Wrapper.grid.init(function() { return 0;});
-	Wrapper.redraw();
-}
-
-Wrapper.mouseToTile = function(v) {
-	var v2 = v.clone();
-	v2.addV( Wrapper.viewStart);
-	v2.scale(1. / Wrapper.cellSize);
-
-	return Vector.floor(v2);
-}
-
-//interprets a click on the canvas
-Wrapper.doClick = function(m){
-	m = Wrapper.mouseToTile(m);
-
-	Wrapper.grid.toggle(m.x, m.y);
-	Wrapper.redraw();
-}
-
-Wrapper.doMove = function(m){
-	Wrapper.mouse.pixelCoords = m.clone();
-	m = Wrapper.mouseToTile(m);
-	Wrapper.pan.checkPan();
-	Wrapper.mouse.onScreen = true;
-	Wrapper.mouse.setV(m);
-	Wrapper.redraw();
-}
-
-Wrapper.doMouseOut = function(){
-	Wrapper.mouse.onScreen = false;
-	Wrapper.pan.checkPan();
-	Wrapper.redraw();
 }
 
 
@@ -507,6 +482,71 @@ Bounds.prototype.contains = function(pos){
 	return pos.x > this.pos.x && pos.y > this.pos.y && pos.x < this.pos.x + this.size.x && pos.y < this.pos.y + this.size.y;}
 Bounds.prototype.draw = function(g){
 	g.strokeRect(this.pos.x, this.pos.y, this.size.x, this.size.y);
+}
+
+
+//Public wrapper functions
+
+Wrapper.playPause = function () {
+	if(Wrapper.playing) {
+		Wrapper.playing = 0;
+		document.getElementById("pauseButton").value="Play";
+	} else {
+		Wrapper.playing = 1;
+		document.getElementById("pauseButton").value="Pause";
+	}
+	Wrapper.tick();
+}
+
+Wrapper.clear = function () {
+	Wrapper.grid.init(function() { return 0;});
+	Wrapper.redraw();
+}
+
+Wrapper.mouseToTile = function(v) {
+	var v2 = v.clone();
+	v2.addV( Wrapper.viewStart);
+	v2.scale(1. / Wrapper.cellSize);
+
+	return Vector.floor(v2);
+}
+
+//interprets a click on the canvas
+Wrapper.doClick = function(m){
+	m = Wrapper.mouseToTile(m);
+
+	Wrapper.grid.toggle(m.x, m.y);
+	Wrapper.redraw();
+}
+
+Wrapper.doMove = function(m){
+	Wrapper.mouse.pixelCoords = m.clone();
+	m = Wrapper.mouseToTile(m);
+	Wrapper.pan.checkPan();
+	Wrapper.mouse.onScreen = true;
+	Wrapper.mouse.setV(m);
+	Wrapper.redraw();
+}
+
+Wrapper.doMouseOut = function(){
+	Wrapper.mouse.onScreen = false;
+	Wrapper.pan.checkPan();
+	Wrapper.redraw();
+}
+
+//returns true or false if succeeded
+Wrapper.tryResize = function(vec_size) {
+	if(Grid.checkValidGridSize(vec_size)) {
+		Wrapper.grid.resizeGrid(vec_size);
+		Wrapper.redraw()
+		return true;
+	} else {
+		return false;
+	}
+}
+
+Wrapper.getGridSize = function() {
+	return Wrapper.grid.size;
 }
 
 console.log("Done");

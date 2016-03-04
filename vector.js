@@ -68,6 +68,10 @@ Vector.prototype.clone = function(){
 	return new Vector(this.x,this.y);
 }
 
+Vector.prototype.isInt = function(v){
+	return this.equalsV(Vector.floor(this));
+}
+
 Vector.prototype.isNaN = function(){
 	return	this.x == null || 
 			this.y == null || 
@@ -80,6 +84,7 @@ Vector.prototype.toString = function(){
 }
 
 Vector.prototype.equals = function(x,y){
+	if(x === undefined || y === undefined) throw "Wrong params in Vector equals";
 	return this.x == x && this.y == y
 }
 
