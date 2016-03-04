@@ -21,13 +21,24 @@ canvas {
 	float: left;
 }
 
-.row{
+div.ui_group {
+	border-width: 1px;
+	border-color: black;
+	border-style: solid;
+	margin: 4px;
+	padding: 4px;
+}
+
+.float{
 	float: left;
 }
 
-.num_input{
+input.num_input{
 	width: 50px;
-	float: left;
+}
+
+.num_input input{
+	width: 50px;
 }
 </style>
 <meta charset="utf-8"/>
@@ -36,21 +47,27 @@ canvas {
 <canvas id="main_canvas" width="1000" height="800"></canvas>
 
 <div id="ui">
-	<div>
+	<div class="ui_group">
 		<input id="pauseButton" value="Play" type="button" onclick="Wrapper.playPause()"/>
+		<input value="Clear" type="button" onclick="Wrapper.clear()"/>
 	</div>
-	<input value="Clear" type="button" onclick="Wrapper.clear()"/>
-	<div id="resize">
-		<form id="xy_resize_form">
-			<input class="num_input x" value="24" type="number"/>
-			<input class="num_input y" value="24" type="number"/>
+	<div id="resize" class="ui_group">
+		<form id="xy_resize">
+			<div class="">Resize grid: </div>
+			<div class="num_input"> x <input class="x" type="number"/> </div>
+			<div class="num_input"> y <input class="y" type="number"/> </div>
 		</form>
 	</div>
-	<div>
-		<input class="row" type="button" value="exportRLE" onclick="document.getElementById('RLEbox').value = Wrapper.grid.exportRLE()"/>
-		<input class="row" type="button" value="importRLE" onclick="Wrapper.grid.importRLE(document.getElementById('RLEbox').value)"/>
+	<div id="rle" class="ui_group">
+		<div>
+			<input class="" type="button" value="exportRLE" onclick="document.getElementById('RLEbox').value = Wrapper.grid.exportRLE()"/>
+			<input class="" type="button" value="importRLE" onclick="Wrapper.grid.importRLE(document.getElementById('RLEbox').value)"/>
+		</div>
+		<textarea id="RLEbox"></textarea>
 	</div>
-	<textarea id="RLEbox"></textarea>
+	<div class="ui_group">
+		<div> Cell size: <input id="cellsize" class="num_input" type="number"/></div>
+	</div>
 </div>
 
 <script type="text/javascript" src="jquery-1.12.1.js"></script>
@@ -65,51 +82,69 @@ CONSTANTS.pixelsperunit = 64;
 var UI = {};
 
 //get/set x/y val as a vector
-function xyFormVal(formObj, vect_val) {
-	if(formObj == null) { throw "Null ptr in xyFormVal";}
-	if(vect_val === undefined) {
+function xyFormProp(formObj, vect_val) {
+	if(formObj == null) { throw "Null ptr in xyFormProp";}
+	if(vect_val === undefined) {  //Getter
 		return new Vector(
 			0|formObj.find("input.x").val(),
 			0|formObj.find("input.y").val());
-	} else {
+	} else {                      //Setter
 			formObj.find("input.x").val(vect_val.x);
 			formObj.find("input.y").val(vect_val.y);
 	}
 }
 
+function inputProp(inputObj, form_val) {
+	if(inputObj == null) { throw "Null ptr in inputProp";}
+	if(form_val === undefined) {  //Getter
+		return 0|inputObj.val();
+	} else {                      //Setter
+		inputObj.val(form_val);
+	}
+}
+
+//Returns a vector with canvas click coords
+function getCanvasClick(j_canvas, event) {
+	var rect = UI.canvas[0].getBoundingClientRect();
+	var x = event.clientX - rect.left;
+	var y = event.clientY - rect.top;
+	return new Vector(x, y);
+}
+
 function init() {
+	//Setup canvas mouse events
 	UI.canvas = $("canvas#main_canvas");
 	UI.canvas.click(function(event){
-		var rect = UI.canvas[0].getBoundingClientRect();
-		var x = event.clientX - rect.left;
-		var y = event.clientY - rect.top;
-		Wrapper.doClick(new Vector(x, y));
-	});
+		Wrapper.doClick(getCanvasClick(UI.canvas, event));});
 	UI.canvas.mousemove(function(event){
-		var rect = UI.canvas[0].getBoundingClientRect();
-		var x = event.clientX - rect.left;
-		var y = event.clientY - rect.top;
-		Wrapper.doMove(new Vector(x, y));
-	});
+		Wrapper.doMove(getCanvasClick(UI.canvas, event));});
 	UI.canvas.mouseout(function(event){
-		Wrapper.doMouseOut();
+		Wrapper.doMouseOut();});
+
+	//Setup option UI events
+	UI.resize_form = $("form#xy_resize");
+	UI.resize_form.change(function(event){
+		var success = Wrapper.tryResize(xyFormProp(UI.resize_form));
+		if(!success) //If failed, reset input back to actual size
+			{ xyFormProp(UI.resize_form, Wrapper.getGridSize()); }
 	});
 
-	UI.resize_form = $("form#xy_resize_form");
-	UI.resize_form.change(function(event){
-		var success = Wrapper.tryResize(xyFormVal(UI.resize_form));
-		if(!success) //If failed, reset input back to actual size
-			{ xyFormVal(UI.resize_form, Wrapper.getGridSize()); }
+	UI.cellsize_input = $("input#cellsize");
+	UI.cellsize_input.change(function(event){
+		if(UI.cellsize_input.val() < 0) {
+			console.log(1);
+			event.preventDefault();
+		}
 	});
 
 	console.log("Running code...")
 
-	var g = UI.canvas[0].getContext("2d");
-	
+	//Create grid
 	Wrapper.init(new Grid(new Vector(10, 10)), UI.canvas[0], 16)
 
 	//Init all options to their actual values
-	xyFormVal(UI.resize_form, Wrapper.getGridSize());
+	xyFormProp(UI.resize_form, Wrapper.getGridSize());
+	inputProp(UI.cellsize_input, 8);
 }
 
 
