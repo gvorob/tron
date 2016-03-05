@@ -133,16 +133,12 @@ function init() {
 	UI.rle_export_input.click(function(event) {
 		UI.rle_data.val(Wrapper.exportRLE());});
 	UI.resize_form.change(function(event){
-		var success = Wrapper.tryResize(xyFormProp(UI.resize_form));
-		if(!success) //If failed, reset input back to actual size
-			{ xyFormProp(UI.resize_form, Wrapper.getGridSize()); }
+		var rval = Wrapper.gridSizeProp(xyFormProp(UI.resize_form));
+		xyFormProp(UI.resize_form, rval);
 	});
 
 	UI.cellsize_input.change(function(event){
-		if(UI.cellsize_input.val() < 0) {
-			console.log(1);
-			event.preventDefault();
-		}
+		UI.cellsize_input.val(Wrapper.cellSizeProp(UI.cellsize_input.val()));
 	});
 
 	console.log("Running code...")
@@ -151,7 +147,7 @@ function init() {
 	Wrapper.init(new Grid(new Vector(10, 10)), UI.canvas[0], 16)
 
 	//Init all options to their actual values
-	xyFormProp(UI.resize_form, Wrapper.getGridSize());
+	xyFormProp(UI.resize_form, Wrapper.gridSizeProp());
 	inputProp(UI.cellsize_input, 8);
 }
 

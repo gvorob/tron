@@ -198,19 +198,21 @@ Grid.prototype.draw = function(g, cellSize, vstart) {
 	}
 
 	//Draw outlines
-	g.lineWidth = 1;
-	g.strokeStyle = "#888";
-	for(var i = 0; i <= this.size.x; i++){
-		g.beginPath();
-		g.moveTo(i * cellSize + 0.5, 0)
-		g.lineTo(i * cellSize + 0.5, this.size.y * cellSize);
-		g.stroke()
-	}
-	for(var j = 0; j <= this.size.y; j++){
-		g.beginPath();
-		g.moveTo(0, j * cellSize + 0.5)
-		g.lineTo(this.size.x * cellSize, j * cellSize + 0.5);
-		g.stroke()
+	if(cellSize > 3) {
+		g.lineWidth = 1;
+		g.strokeStyle = "#888";
+		for(var i = 0; i <= this.size.x; i++){
+			g.beginPath();
+			g.moveTo(i * cellSize + 0.5, 0)
+			g.lineTo(i * cellSize + 0.5, this.size.y * cellSize);
+			g.stroke()
+		}
+		for(var j = 0; j <= this.size.y; j++){
+			g.beginPath();
+			g.moveTo(0, j * cellSize + 0.5)
+			g.lineTo(this.size.x * cellSize, j * cellSize + 0.5);
+			g.stroke()
+		}
 	}
 	g.restore();
 }
@@ -346,18 +348,20 @@ Grid.prototype.importRLE = function(string) {
 
 var Wrapper = function(){
 	var playing = 0;
-	var grid, canvas, cellsize;
+	var grid, canvas, cellSize;
 	var viewStart = new Vector(0,0);
 	var mouse = new Vector(0,0);
 	var pan = {}
 
-	function init(in_grid, in_canvas, in_cellsize) {
+	var minCellSize = 1;
+
+	function init(in_grid, in_canvas, in_cellSize) {
 		grid = in_grid;
 		grid.init(function(x,y) {
 			return 0;
 		})
 		canvas = in_canvas;
-		cellSize = in_cellsize;
+		cellSize = in_cellSize;
 		pan.init(60, 5)
 
 		redraw();
@@ -527,21 +531,29 @@ var Wrapper = function(){
 	}
 
 	//returns true or false if succeeded
-	function tryResize(vec_size) {
-		if(Grid.checkValidGridSize(vec_size)) {
+	function gridSizeProp(vec_size) {
+		if(vec_size !== undefined && Grid.checkValidGridSize(vec_size)) {
 			grid.resizeGrid(vec_size);
 			redraw()
-			return true;
-		} else {
-			return false;
 		}
+		return grid.size.clone();
 	}
 
-	function getGridSize() {return grid.size;}
+	//cellSizeProp() is a getter
+	//cellSizeProp(v) sets to v if valid, returns v or old val if not
+	function cellSizeProp(newVal) {
+		if(newVal != null && newVal >= minCellSize) { 
+			cellSize = newVal; 
+			redraw();
+		}
+		return cellSize;
+	}
+
 	function exportRLE()     {return grid.exportRLE();}
 
 	function importRLE(data) {
 		grid.importRLE(data);
+		gridSizeProp(grid.size);
 		redraw();
 	}
 	
@@ -552,8 +564,8 @@ var Wrapper = function(){
 		doClick:        doClick,
 		doMove:         doMove,
 		doMouseOut:     doMouseOut,
-		tryResize:      tryResize,
-		getGridSize:    getGridSize,
+		gridSizeProp:   gridSizeProp,
+		cellSizeProp:   cellSizeProp,
 		exportRLE:      exportRLE,
 		importRLE:      importRLE};
 }();
