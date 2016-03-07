@@ -59,10 +59,17 @@ input.num_input{
 		</form>
 	</div>
 	<div id="rle" class="ui_group">
+		<div class="">Import Pattern</div>
 		<div>
 			<input class="" type="button" id="rle_export" value="export RLE" />
 			<input class="" type="button" id="rle_import" value="import RLE" />
 		</div>
+		<form id="xy_import">
+			<input type="radio" name="import_type" value="whole" checked="true">Import whole</input> </br>
+			<input type="radio" name="import_type" value="at_coords">Import at coords</input>
+			<div class="num_input"> x <input class="x" type="number"/> </div>
+			<div class="num_input"> y <input class="y" type="number"/> </div>
+		</form>
 		<textarea id="rle_data"></textarea>
 	</div>
 	<div class="ui_group">
@@ -118,6 +125,8 @@ function init() {
 	UI.rle_import_input = $("input#rle_import");
 	UI.rle_export_input = $("input#rle_export");
 	UI.rle_data = $("textarea#rle_data");
+	UI.rle_import_type = $("#xy_import input:radio[name=import_type]");
+	UI.xy_import_form = $("form#xy_import");
 
 	//Setup canvas mouse events
 	UI.canvas.click(function(event){
@@ -129,7 +138,13 @@ function init() {
 
 	//Setup option UI events
 	UI.rle_import_input.click(function(event) {
-		Wrapper.importRLE(UI.rle_data.val());});
+		var importType = UI.rle_import_type.filter(":checked").val();
+		var importCoords = xyFormProp(UI.xy_import_form);
+		if(importType == "whole") {
+			Wrapper.importWhole(UI.rle_data.val());
+		} else if(importType == "at_coords") {
+			Wrapper.importAtCoords(UI.rle_data.val(), importCoords);
+		} else { throw "invalid import option"}});
 	UI.rle_export_input.click(function(event) {
 		UI.rle_data.val(Wrapper.exportRLE());});
 	UI.resize_form.change(function(event){
@@ -140,6 +155,12 @@ function init() {
 	UI.cellsize_input.change(function(event){
 		UI.cellsize_input.val(Wrapper.cellSizeProp(UI.cellsize_input.val()));
 	});
+
+	/*
+	$('input:radio[name=theme]').click(function() {
+	  var val = $('input:radio[name=theme]:checked').val();
+	  });
+	*/
 
 	console.log("Running code...")
 

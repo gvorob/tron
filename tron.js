@@ -88,6 +88,14 @@ Grid.prototype.setAlive = function(x, y, life) {
 	this.dataNext[x][y] = life;
 }
 
+Grid.prototype.setAliveNow = function(x, y, life) {
+	if(!this.isInBounds(x,y)) { 
+		x = this.wrap(x, this.size.x);
+		y = this.wrap(y, this.size.y);
+	}
+	this.data[x][y] = life;
+}
+
 //toggles IMMEDIATELY (for mouse click)
 Grid.prototype.toggle = function(x, y) {
 	if(!this.isInBounds(x,y)) { return; }
@@ -255,7 +263,28 @@ Grid.prototype.exportRLE = function() {
 	return rleString;
 }
 
+Grid.extractRLEHeader = function(string) {
+	var lines = string.split('\n');
+	var i;
+	for(i = 0; i < lines.length; i++) {
+		if(lines[i].charAt(0) != "#")
+			{break;}}
+	if(i == lines.length) {throw "Header not found";}
+	return lines[i];
+}
+
+Grid.extractRLEBody = function(string) {
+	var lines = string.split('\n');
+	var i;
+	for(i = 0; i < lines.length; i++) {
+		if(lines[i].charAt(0) != "#")
+			{break;}}
+	if(i == lines.length) {throw "Body not found";}
+	return lines.slice(i + 1).join("");
+}
+
 Grid.parseRLEHeader = function(string) {
+	string = Grid.extractRLEHeader(string);
 	string = string.replace(/\s+/g,"");
 	params = string.match(/^x=(\d+),y=(\d+)(,.*)?$/);
 
@@ -268,57 +297,56 @@ Grid.parseRLEHeader = function(string) {
 	return v;
 }
 
-Grid.prototype.importRLE = function(string) {
-	var cellAdder = {};
-	cellAdder.x = 0;
-	cellAdder.y = 0;
-	var _this = this; //needed for addNCells
+Grid.prototype.importRLEAtCoords = function(string, coords) {
+	var _that = this;
+	var cellAdder = function() {
+		var startCoords = coords.clone();
+		var currCoords = coords.clone();
+		var maxCoords = Grid.parseRLEHeader(string);
+		maxCoords.addV(startCoords);
+		var grid = _that;
 
-	//cell can be "o", "b", or "$"
-	function addNCells(n, cell) {
-		if(n < 0) {throw "negative RLE";}
+		if(startCoords.isNaN() ||
+		   currCoords.isNaN() ||
+		   maxCoords.isNaN()) 
+			{throw "NaN in Grid.*.importRLEAtCoords";}
+	
+		//cell can be "o", "b", or "$"
+		function addNCells(n, cell) {
+			if(n < 0) {throw "negative RLE";}
 
-		//Handle newlines
-		if(cell == "$") {
-			cellAdder.y += n;
-			cellAdder.x = 0;
-		}
+			//Handle newlines
+			if(cell == "$") {
+				currCoords.y += n;
+				currCoords.x = startCoords.x;
+			}
 
-		//Handle other cells
-		else {
-			if(cellAdder.y >= _this.size.y) {return;}
+			//Handle other cells
+			else {
+				if(currCoords.y >= maxCoords.y) {return;}
 
-			//decode char
-			if		(cell == "o") {cell = 1}
-			else if	(cell == "b") {cell = 0}
-			else {throw "Cell not in [ob$]";}
+				//decode char
+				if		(cell == "o") {cell = 1}
+				else if	(cell == "b") {cell = 0}
+				else {throw "Cell not in [ob$]";}
 
-			//Add n cells
-			for(var k = 0; k < n; k++) {
-				if(cellAdder.x >= _this.size.x) {break;}
-				_this.data[cellAdder.x][cellAdder.y] = cell;
-				cellAdder.x++;
+				//Add n cells
+				for(var k = 0; k < n; k++) {
+					if(currCoords.x >= maxCoords.x) {break;}
+					grid.setAliveNow(currCoords.x, currCoords.y, cell);
+					currCoords.x++;
+				}
 			}
 		}
-	}
 
-	//Prepare input
-	var lines = string.split('\n');
+		return {
+			addNCells: addNCells
+		}
+	}();
 
-	//Parse out comments
-	var i;
-	for(i = 0; i < lines.length; i++) {
-		if(lines[i].charAt(0) != "#")
-			{break;}
-	}
-	if(i == lines.length) {throw "Header not found";}
-
-	//Parse header, remake grid
-	var size = Grid.parseRLEHeader(lines[i]);
-	this.makeGrid(size);
 
 	//Prepare body parser
-	var rest = lines.slice(i + 1).join("");
+	var rest = Grid.extractRLEBody(string);
 	var re = /^\s*(!|(\d*)([ob\$]))/;
 	var flag = true;
 	var lastindex = 0;
@@ -339,7 +367,7 @@ Grid.prototype.importRLE = function(string) {
 
 		//Add cells
 		//console.log(runlength, match[3]);
-		addNCells(runlength, match[3]);
+		cellAdder.addNCells(runlength, match[3]);
 	}
 
 }
@@ -551,8 +579,13 @@ var Wrapper = function(){
 
 	function exportRLE()     {return grid.exportRLE();}
 
-	function importRLE(data) {
-		grid.importRLE(data);
+	function importWhole(data) {
+		grid.makeGrid(Grid.parseRLEHeader(data));
+		importAtCoords(data, new Vector(0,0));
+	}
+
+	function importAtCoords(data, coords) {
+		grid.importRLEAtCoords(data, coords);
 		gridSizeProp(grid.size);
 		redraw();
 	}
@@ -567,7 +600,8 @@ var Wrapper = function(){
 		gridSizeProp:   gridSizeProp,
 		cellSizeProp:   cellSizeProp,
 		exportRLE:      exportRLE,
-		importRLE:      importRLE};
+		importWhole:    importWhole,
+		importAtCoords: importAtCoords};
 }();
 
 console.log("Done");
