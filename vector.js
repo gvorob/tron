@@ -25,6 +25,7 @@ Vector.prototype.getLength = function(){
 Vector.prototype.scale = function(a){
 	this.x *= a;
 	this.y *= a;
+	return this;
 }
 
 Vector.prototype.setLength = function(len){
@@ -32,36 +33,43 @@ Vector.prototype.setLength = function(len){
 	if(this.getLength() == Infinity){
 		this.set(0,0);
 	}
+	return this;
 }
 
 Vector.prototype.setV = function(otherVect){
 	this.x = otherVect.x;
 	this.y = otherVect.y;
+	return this;
 }
 
 Vector.prototype.set = function(x,y){
 	this.x = x;
 	this.y = y;
+	return this;
 }
 
 Vector.prototype.add = function(x,y){
 	this.x += x;
 	this.y += y;
+	return this;
 }
 
 Vector.prototype.addV = function(other){
 	this.x += other.x;
 	this.y += other.y;
+	return this;
 }
 
 Vector.prototype.addScaledV = function(scale,other){
 	this.x += other.x * scale;
 	this.y += other.y * scale;
+	return this;
 }
 
 Vector.prototype.multElements = function(other){
 	this.x *= other.x;
 	this.y *= other.y;
+	return this;
 }
 
 Vector.prototype.clone = function(){
