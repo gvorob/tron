@@ -67,8 +67,8 @@ input.num_input{
 		<form id="xy_import">
 			<input type="radio" name="import_type" value="whole" checked="true">Import whole</input> </br>
 			<input type="radio" name="import_type" value="at_coords">Import at coords</input>
-			<div class="num_input"> x <input class="x" type="number"/> </div>
-			<div class="num_input"> y <input class="y" type="number"/> </div>
+			<div class="num_input"> x <input class="x" type="number" value="0"/> </div>
+			<div class="num_input"> y <input class="y" type="number" value="0"/> </div>
 		</form>
 		<textarea id="rle_data"></textarea>
 	</div>
@@ -168,10 +168,13 @@ function init() {
 	Wrapper.init(new Grid(new Vector(10, 10)), UI.canvas[0], 16)
 
 	//Init all options to their actual values
-	xyFormProp(UI.resize_form, Wrapper.gridSizeProp());
-	inputProp(UI.cellsize_input, 8);
+	initProperties()
 }
 
+function initProperties() {
+	xyFormProp(UI.resize_form, Wrapper.gridSizeProp());
+	inputProp(UI.cellsize_input, Wrapper.cellSizeProp());
+}
 
 console.log("Done");
 
