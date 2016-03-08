@@ -168,10 +168,8 @@ Grid.isEven = function(x,y) {
 }
 
 Grid.prototype.updateTron = function() {
-	if(!Grid.isEven(this.size.x, this.size.y)) {
-		console.log("Uneven size ")
-		return;
-	}
+	if(!Grid.isEven(this.size.x, this.size.y)) 
+		{ throw "Uneven size in updateTron"; }
 
 	//loop over all blocks, offsetting appropriately each time
 	for(var i = this.margOffset|0; i < this.size.x + 1; i+=2){
@@ -449,12 +447,18 @@ var Wrapper = function(){
 		redrawFlag = false;
 	}
 
-	function mouseToTile(v) {
+	function pixelToTile(v) {
 		var v2 = v.clone();
 		v2.addV(viewStart);
 		v2.scale(1 / cellSize);
-
 		return Vector.floor(v2);
+	}
+
+	function tileToPixel(v) {
+		var v2 = v.clone();
+		v2.scale(cellSize);
+		v2.addScaledV(-1, viewStart);
+		return v2;
 	}
 
 	pan.init = function(limit, speed){
@@ -510,6 +514,22 @@ var Wrapper = function(){
 		setTimeout(pan.doPan, pan.intervalMillis);
 	}
 
+	function test(tile) {
+		redraw();
+		return pan.centerOnTile(tile);
+	}
+
+	pan.getCenterTile = function() {
+		return pixelToTile(new Vector(canvas.width / 2, canvas.height / 2))
+	}
+
+	pan.centerOnTile = function(tile) {
+		if(tile.isNaN() || !tile.isInt()) { throw "invalid tile in pan.centerOnTile"; }
+		var tileCoords = tile.clone().scale(cellSize);
+		tileCoords.add(canvas.width / -2, canvas.height / -2);
+		viewStartProp(tileCoords);
+	}
+
 	function Bounds(pos,size){//pos and size are vectors
 		this.pos = pos;
 		this.size = size;}
@@ -537,7 +557,7 @@ var Wrapper = function(){
 
 	//interprets a click on the canvas
 	function doClick(m){
-		m = mouseToTile(m);
+		m = pixelToTile(m);
 
 		grid.toggle(m.x, m.y);
 		redraw();
@@ -545,7 +565,7 @@ var Wrapper = function(){
 
 	function doMove(m){
 		mouse.pixelCoords = m.clone();
-		m = mouseToTile(m);
+		m = pixelToTile(m);
 		pan.checkPan();
 		mouse.onScreen = true;
 		mouse.setV(m);
@@ -571,10 +591,20 @@ var Wrapper = function(){
 	//cellSizeProp(v) sets to v if valid, returns v or old val if not
 	function cellSizeProp(newVal) {
 		if(newVal != null && newVal >= minCellSize) { 
+			var oldCenterTile = pan.getCenterTile();
 			cellSize = newVal; 
+			pan.centerOnTile(oldCenterTile);
 			redraw();
 		}
 		return cellSize;
+	}
+
+	function viewStartProp(newVal) {
+		if(newVal != null && !newVal.isNaN()) { 
+			viewStart = newVal; 
+			redraw();
+		}
+		return viewStart;
 	}
 
 	function exportRLE()     {return grid.exportRLE();}
@@ -591,6 +621,7 @@ var Wrapper = function(){
 	}
 	
 	return {
+		test:           test,
 		init:           init,
 		playPause:      playPause,
 		clear:          clear,
