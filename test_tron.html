@@ -128,6 +128,10 @@ function init() {
 	UI.rle_import_type = $("#xy_import input:radio[name=import_type]");
 	UI.xy_import_form = $("form#xy_import");
 
+	//disable highlighting (wasn't even needed for some reason)
+	//UI.canvas.on("selectstart", function() {return false; });
+
+
 	//Setup canvas mouse events
 	UI.canvas.click(function(event){
 		Wrapper.doClick(getCanvasClick(UI.canvas, event));});
@@ -152,8 +156,19 @@ function init() {
 		xyFormProp(UI.resize_form, rval);
 	});
 
+	//setup canvas scrolling
+	UI.canvas.on("wheel", function(event){	
+		var dy = event.originalEvent.deltaY;
+		if(Math.abs(dy) < 0.0001) { dy = 0;}
+		else if(dy < 0) { dy = 1;}
+		else {dy = -1;}
+
+		var lastSize = Wrapper.cellSizeProp();
+		var newSize = Wrapper.cellSizeProp(lastSize + dy);
+		inputProp(UI.cellsize_input, newSize);
+	});
 	UI.cellsize_input.change(function(event){
-		UI.cellsize_input.val(Wrapper.cellSizeProp(UI.cellsize_input.val()));
+		inputProp(UI.cellsize_input, Wrapper.cellSizeProp(UI.cellsize_input.val()));
 	});
 
 	/*
