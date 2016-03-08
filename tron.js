@@ -488,6 +488,8 @@ var Wrapper = function(){
 				direction:	new Vector(0, 1)},
 		];
 
+		pan.clampView();
+	
 		//slides the screen repeatedly if need be
 		pan.doPan();
 	}
@@ -509,9 +511,29 @@ var Wrapper = function(){
 	pan.doPan = function() {
 		if(!pan.panDirection.equals(0,0)) {
 			viewStart.addScaledV(pan.panSpeed, pan.panDirection);
+			pan.clampView();
 			redraw();
 		}
 		setTimeout(pan.doPan, pan.intervalMillis);
+	}
+
+	pan.clampView = function() {
+		//viewStart = -1 * tile(0,0)_coords
+		var tlCoords = viewStart.clone().scale(-1);
+		var gridSize = grid.size.clone().scale(cellSize);
+		if(tlCoords.x > canvas.width / 2)
+			{tlCoords.x = canvas.width / 2; }
+		if(tlCoords.y > canvas.height / 2)
+			{tlCoords.y = canvas.height / 2; }
+		var brCoords = tlCoords.clone().addV(gridSize);
+		if(brCoords.x < canvas.width / 2)
+			{brCoords.x = canvas.width / 2; }
+		if(brCoords.y < canvas.height / 2)
+			{brCoords.y = canvas.height / 2; }
+		
+		tlCoords = brCoords.addScaledV(-1, gridSize);
+
+		viewStart = tlCoords.scale(-1);
 	}
 
 	function test(tile) {
@@ -582,6 +604,7 @@ var Wrapper = function(){
 	function gridSizeProp(vec_size) {
 		if(vec_size !== undefined && Grid.checkValidGridSize(vec_size)) {
 			grid.resizeGrid(vec_size);
+			pan.clampView();
 			redraw()
 		}
 		return grid.size.clone();
