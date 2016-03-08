@@ -190,10 +190,20 @@ Grid.prototype.updateTron = function() {
 	this.swapBuffers();
 }
 
+Grid.drawLine = function(g, x1, y1, x2, y2) {
+	g.beginPath();
+	//add 0.5 to draw on pixels, instead of between them
+	g.moveTo(x1 + 0.5, y1 + 0.5);
+	g.lineTo(x2 + 0.5, y2 + 0.5);
+	g.stroke()
+}
 
-Grid.prototype.draw = function(g, cellSize, vstart) {
+Grid.prototype.draw = function(g, cellSize, vstart, drawGrid) {
 	g.save();
 	g.translate(-vstart.x, -vstart.y);
+
+	
+	if(drawGrid === undefined) { drawGrid = true; }
 	
 	//Draw cells
 	g.fillStyle = "#420"// : "#EEE";
@@ -203,22 +213,28 @@ Grid.prototype.draw = function(g, cellSize, vstart) {
 		}
 	}
 
-	//Draw outlines
-	if(cellSize > 3) {
+	var gridBottom = this.size.y * cellSize;
+	var gridRight  = this.size.x * cellSize;
+	if(drawGrid) {
+		//Draw outlines
+		var lineX, lineY;
 		g.lineWidth = 1;
 		g.strokeStyle = "#888";
+		//Draw vertical lines
 		for(var i = 0; i <= this.size.x; i++){
-			g.beginPath();
-			g.moveTo(i * cellSize + 0.5, 0)
-			g.lineTo(i * cellSize + 0.5, this.size.y * cellSize);
-			g.stroke()
+			lineX = i * cellSize;
+			Grid.drawLine(g, lineX, 0, lineX, gridBottom);
 		}
-		for(var j = 0; j <= this.size.y; j++){
-			g.beginPath();
-			g.moveTo(0, j * cellSize + 0.5)
-			g.lineTo(this.size.x * cellSize, j * cellSize + 0.5);
-			g.stroke()
+		//Draw horizontal lines
+		for(var i = 0; i <= this.size.y; i++){
+			lineY = i * cellSize;
+			Grid.drawLine(g, 0, lineY, gridRight, lineY);
 		}
+	} else {
+		Grid.drawLine(g, 0,         0,          gridRight, 0         );
+		Grid.drawLine(g, 0,         gridBottom, gridRight, gridBottom);
+		Grid.drawLine(g, 0,         0,          0,         gridBottom);
+		Grid.drawLine(g, gridRight, 0,          gridRight, gridBottom);
 	}
 	g.restore();
 }
@@ -374,7 +390,7 @@ Grid.prototype.importRLEAtCoords = function(string, coords) {
 
 var Wrapper = function(){
 	var playing = 0;
-	var grid, canvas, cellSize;
+	var grid, canvas, cellSize, gridDraw;
 	var viewStart = new Vector(0,0);
 	var mouse = new Vector(0,0);
 	var pan = {}
@@ -420,7 +436,7 @@ var Wrapper = function(){
 		var g = canvas.getContext("2d");
 
 		g.clearRect(0,0, canvas.width, canvas.height);
-		grid.draw(g, cellSize, viewStart);
+		grid.draw(g, cellSize, viewStart, gridDraw);
 
 		//Draw mouse outline
 		if(mouse.onScreen && grid.isInBounds(mouse.x, mouse.y)) {
@@ -622,6 +638,14 @@ var Wrapper = function(){
 		return cellSize;
 	}
 
+	function gridDrawProp(newVal) {
+		if(newVal != null) {
+			gridDraw = newVal;
+			redraw();
+		}
+		return gridDraw;
+	}
+
 	function viewStartProp(newVal) {
 		if(newVal != null && !newVal.isNaN()) { 
 			viewStart = newVal; 
@@ -652,6 +676,7 @@ var Wrapper = function(){
 		doMove:         doMove,
 		doMouseOut:     doMouseOut,
 		gridSizeProp:   gridSizeProp,
+		gridDrawProp:   gridDrawProp,
 		cellSizeProp:   cellSizeProp,
 		exportRLE:      exportRLE,
 		importWhole:    importWhole,
