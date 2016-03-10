@@ -73,7 +73,9 @@ input.num_input{
 		<textarea id="rle_data"></textarea>
 	</div>
 	<div class="ui_group">
-		<div> Cell size: <input id="cellsize" class="num_input" type="number"/></div>
+		<div> 
+			Cell size: <input id="cellsize" class="num_input" type="number"/>
+			Draw Grid: <input id="drawGrid" type="checkbox"></div>
 	</div>
 </div>
 
@@ -127,6 +129,7 @@ function init() {
 	UI.rle_data = $("textarea#rle_data");
 	UI.rle_import_type = $("#xy_import input:radio[name=import_type]");
 	UI.xy_import_form = $("form#xy_import");
+	UI.drawGrid_input = $("input#drawGrid");
 
 	//disable highlighting (wasn't even needed for some reason)
 	//UI.canvas.on("selectstart", function() {return false; });
@@ -154,6 +157,10 @@ function init() {
 	UI.resize_form.change(function(event){
 		var rval = Wrapper.gridSizeProp(xyFormProp(UI.resize_form));
 		xyFormProp(UI.resize_form, rval);
+	});
+	UI.drawGrid_input.change(function(event){
+		var rval = Wrapper.gridDrawProp(UI.drawGrid_input[0].checked);
+		UI.drawGrid_input[0].checked = rval;
 	});
 
 	//setup canvas scrolling
@@ -189,6 +196,7 @@ function init() {
 function initProperties() {
 	xyFormProp(UI.resize_form, Wrapper.gridSizeProp());
 	inputProp(UI.cellsize_input, Wrapper.cellSizeProp());
+	UI.drawGrid_input[0].checked = Wrapper.gridSizeProp();
 }
 
 console.log("Done");
