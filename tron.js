@@ -397,8 +397,8 @@ var Wrapper = function(){
 
 	var minCellSize = 1;
 
-	function init(in_grid, in_canvas, in_cellSize) {
-		grid = in_grid;
+	function init(gridSize, in_canvas, in_cellSize) {
+		grid = new Grid(gridSize);
 		grid.init(function(x,y) {
 			return 0;
 		})
