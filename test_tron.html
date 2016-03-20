@@ -6,14 +6,12 @@ canvas {
 	border-style: solid;
 	border-width: 1px;
 	background-color: #EEE;
-	float: left;
-	clear: left;
 }
-
-#ui{
-	margin-left: 30px;
+div#pattern_list {
+	width: 300px;
+}
+div#ui{
 	width: 200px;
-	float: left;
 }
 
 div.ui_group {
@@ -22,6 +20,14 @@ div.ui_group {
 	border-style: solid;
 	margin: 4px;
 	padding: 4px;
+}
+
+.topcontainer {
+	/*border: 1px solid black;*/
+	background-color: #F0F0E0;
+	margin: 4px;
+	margin-left: 15px;
+	float: left;
 }
 
 .float{
@@ -39,9 +45,15 @@ input.num_input{
 <meta charset="utf-8"/>
 </head>
 <body>
-<canvas id="main_canvas" width="1000" height="800"></canvas>
+<div id="pattern_list" class="topcontainer">
+Temp:
+</div>
 
-<div id="ui">
+<div class="topcontainer">
+	<canvas id="main_canvas" width="1000" height="800"></canvas>
+</div>
+
+<div id="ui" class="topcontainer">
 	<div class="ui_group">
 		<input id="play_pause_button" value="Play"  type="button"/>
 		<input id="clear_button"      value="Clear" type="button"/>
@@ -127,6 +139,22 @@ function getCanvasClick(j_canvas, event) {
 	return new Vector(x, y);
 }
 
+//Creates divs in div#pattern_list to represent list of available patterns
+//Takes args like:
+//[ {id: foo, name: bar}, ...]
+function renderPatternList(patternList) {
+	//Clear div
+	UI.pattern_list.html("");
+
+	//Populate div
+	for(var i = 0; i < patternList.length; i++) {
+		UI.pattern_list.append(
+				"<div id=" + patternList[i].id + ">" + 
+				patternList[i].name + 
+				"</div>");
+	}
+}
+
 function init() {
 
 	//================================
@@ -203,6 +231,13 @@ function init() {
 	UI.cellsize_input = $("input#cellsize");
 	UI.cellsize_input.change(function(event){
 		inputProp(UI.cellsize_input, Wrapper.cellSizeProp(UI.cellsize_input.val()));
+	});
+
+	//Pattern list
+	UI.pattern_list = $("div#pattern_list");
+	UI.pattern_list.on("click","div", function(event) {
+		console.log(event);
+		console.dir($(this));
 	});
 
 	//update FPS counter
