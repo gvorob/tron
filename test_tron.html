@@ -48,8 +48,8 @@ input.num_input{
 
 <div id="ui">
 	<div class="ui_group">
-		<input id="pauseButton" value="Play" type="button" onclick="Wrapper.playPause()"/>
-		<input value="Clear" type="button" onclick="Wrapper.clear()"/>
+		<input id="play_pause_button" value="Play"  type="button"/>
+		<input id="clear_button"      value="Clear" type="button"/>
 	</div>
 	<div id="resize" class="ui_group">
 		<form id="xy_resize">
@@ -87,8 +87,12 @@ input.num_input{
 
 console.log("Loading main js...")
 
-var CONSTANTS = {};
-CONSTANTS.pixelsperunit = 64;
+var DEFAULTS = {
+	gridSize: new Vector(32, 32),
+	cellSize: 16,
+	drawGrid: true,
+};
+
 var UI = {};
 
 //get/set x/y val as a vector
@@ -122,49 +126,16 @@ function getCanvasClick(j_canvas, event) {
 }
 
 function init() {
-	UI.canvas = $("canvas#main_canvas");
-	UI.resize_form = $("form#xy_resize");
-	UI.cellsize_input = $("input#cellsize");
-	UI.rle_import_input = $("input#rle_import");
-	UI.rle_export_input = $("input#rle_export");
-	UI.rle_data = $("textarea#rle_data");
-	UI.rle_import_type = $("#xy_import input:radio[name=import_type]");
-	UI.xy_import_form = $("form#xy_import");
-	UI.drawGrid_input = $("input#drawGrid");
 
-	//disable highlighting (wasn't even needed for some reason)
-	//UI.canvas.on("selectstart", function() {return false; });
-
-
+	//================================
 	//Setup canvas mouse events
+	UI.canvas = $("canvas#main_canvas");
 	UI.canvas.click(function(event){
 		Wrapper.doClick(getCanvasClick(UI.canvas, event));});
 	UI.canvas.mousemove(function(event){
 		Wrapper.doMove(getCanvasClick(UI.canvas, event));});
 	UI.canvas.mouseout(function(event){
 		Wrapper.doMouseOut();});
-
-	//Setup option UI events
-	UI.rle_import_input.click(function(event) {
-		var importType = UI.rle_import_type.filter(":checked").val();
-		var importCoords = xyFormProp(UI.xy_import_form);
-		if(importType == "whole") {
-			Wrapper.importWhole(UI.rle_data.val());
-		} else if(importType == "at_coords") {
-			Wrapper.importAtCoords(UI.rle_data.val(), importCoords);
-		} else { throw "invalid import option"}});
-	UI.rle_export_input.click(function(event) {
-		UI.rle_data.val(Wrapper.exportRLE());});
-	UI.resize_form.change(function(event){
-		var rval = Wrapper.gridSizeProp(xyFormProp(UI.resize_form));
-		xyFormProp(UI.resize_form, rval);
-	});
-	UI.drawGrid_input.change(function(event){
-		var rval = Wrapper.gridDrawProp(UI.drawGrid_input[0].checked);
-		UI.drawGrid_input[0].checked = rval;
-	});
-
-	//setup canvas scrolling
 	UI.canvas.on("wheel", function(event){	
 		var dy = event.originalEvent.deltaY;
 		if(Math.abs(dy) < 0.0001) { dy = 0;}
@@ -175,6 +146,59 @@ function init() {
 		var newSize = Wrapper.cellSizeProp(lastSize + dy);
 		inputProp(UI.cellsize_input, newSize);
 	});
+
+	//=================================
+	//Setup events for main UI elements
+
+	//Button: play
+	UI.play_pause_button = $("input#play_pause_button");
+	UI.play_pause_button.click(function(event) {
+		var wasPlaying = Wrapper.playingProp();
+		var playing = Wrapper.playingProp(!wasPlaying);
+		UI.play_pause_button.val(playing ? "Pause" : "Play");
+	});
+
+	//Button: clear
+	UI.clear_button = $("input#clear_button");
+	UI.clear_button.click(function(event) {
+		Wrapper.clear()});
+
+	//Form submit: Import RLE string
+	UI.rle_import_input = $("input#rle_import");
+	UI.xy_import_form =   $("form#xy_import");
+	UI.rle_import_type =  $("#xy_import input:radio[name=import_type]");
+	UI.rle_data =         $("textarea#rle_data");
+
+	UI.rle_import_input.click(function(event) {
+		var importType = UI.rle_import_type.filter(":checked").val();
+		var importCoords = xyFormProp(UI.xy_import_form);
+		if(importType == "whole") {
+			Wrapper.importWhole(UI.rle_data.val());
+		} else if(importType == "at_coords") {
+			Wrapper.importAtCoords(UI.rle_data.val(), importCoords);
+		} else { throw "invalid import option"}});
+
+	//Button: Export RLE string
+	UI.rle_export_input = $("input#rle_export");
+	UI.rle_export_input.click(function(event) {
+		UI.rle_data.val(Wrapper.exportRLE());});
+
+	//XY field change: Grid size
+	UI.resize_form = $("form#xy_resize");
+	UI.resize_form.change(function(event){
+		var rval = Wrapper.gridSizeProp(xyFormProp(UI.resize_form));
+		xyFormProp(UI.resize_form, rval);
+	});
+
+	//Checkbox: drawGrid
+	UI.drawGrid_input = $("input#drawGrid");
+	UI.drawGrid_input.change(function(event){
+		var rval = Wrapper.gridDrawProp(UI.drawGrid_input[0].checked);
+		UI.drawGrid_input[0].checked = rval;
+	});
+
+	//Field: cellSize
+	UI.cellsize_input = $("input#cellsize");
 	UI.cellsize_input.change(function(event){
 		inputProp(UI.cellsize_input, Wrapper.cellSizeProp(UI.cellsize_input.val()));
 	});
@@ -187,17 +211,17 @@ function init() {
 
 	console.log("Running code...")
 
-	//Create grid
-	Wrapper.init(new Vector(32, 32), UI.canvas[0], 16)
+	//Init Wrapper
+	Wrapper.init(DEFAULTS.gridSize, UI.canvas[0], DEFAULTS.cellSize)
 
 	//Init all options to their actual values
 	initProperties()
 }
 
 function initProperties() {
-	xyFormProp(UI.resize_form, Wrapper.gridSizeProp());
-	inputProp(UI.cellsize_input, Wrapper.cellSizeProp());
-	UI.drawGrid_input[0].checked = Wrapper.gridSizeProp();
+	xyFormProp(UI.resize_form,     DEFAULTS.gridSize);
+	inputProp (UI.cellsize_input,  DEFAULTS.cellSize);
+	UI.drawGrid_input[0].checked = DEFAULTS.drawGrid;
 }
 
 console.log("Done");

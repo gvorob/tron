@@ -389,7 +389,7 @@ Grid.prototype.importRLEAtCoords = function(string, coords) {
 
 
 var Wrapper = function(){
-	var playing = 0;
+	var tickTimer; //from timer.js
 	var grid, canvas, cellSize, gridDraw;
 	var viewStart = new Vector(0,0);
 	var mouse = new Vector(0,0);
@@ -406,6 +406,8 @@ var Wrapper = function(){
 		cellSize = in_cellSize;
 		pan.init(60, 5)
 
+		tickTimer = new Timer(step, 5);
+
 		redraw();
 		drawAtFPS(60);
 	}
@@ -419,12 +421,6 @@ var Wrapper = function(){
 
 	//marks the screen as dirty
 	function redraw() { redrawFlag = true; }
-
-	function tick() {
-		if(!playing) {return;}
-		step()
-		setTimeout(tick, 200);
-	}
 
 	function step() {
 		grid.updateConway();
@@ -577,15 +573,8 @@ var Wrapper = function(){
 		g.strokeRect(this.pos.x, this.pos.y, this.size.x, this.size.y);
 	}
 
-	function playPause () {
-		if(playing) {
-			playing = 0;
-			document.getElementById("pauseButton").value="Play";
-		} else {
-			playing = 1;
-			document.getElementById("pauseButton").value="Pause";
-		}
-		tick();
+	function playingProp(newVal) {
+		return tickTimer.playingProp(newVal);
 	}
 
 	function clear () {
@@ -670,7 +659,8 @@ var Wrapper = function(){
 	return {
 		test:           test,
 		init:           init,
-		playPause:      playPause,
+		playingProp:    playingProp,
+		getFPS:         function() {return tickTimer.getFPS();},
 		clear:          clear,
 		doClick:        doClick,
 		doMove:         doMove,

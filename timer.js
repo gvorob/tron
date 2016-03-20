@@ -80,7 +80,7 @@ var Timer = function(in_action, in_tps) {
 
 	//get/set tps
 	function tpsProp(newVal) {
-		if(arguments.length) {
+		if(newVal != undefined) {
 			if(newVal > 0)
 				{ setTPS(newVal) }
 			else
@@ -92,7 +92,7 @@ var Timer = function(in_action, in_tps) {
 	//start playing, stop playing, or get current state
 	function playingProp(newVal) {
 		//set playing
-		if(arguments.length) {
+		if(newVal != undefined) {
 			if(newVal && !timeoutVar) { //start playing
 				tick();
 			} else if (!newVal && timeoutVar) { //stop playing
@@ -107,7 +107,7 @@ var Timer = function(in_action, in_tps) {
 	return {
 		playingProp: playingProp,
 		tpsProp: tpsProp,
-		getFramerate: function() {return fps.lastFPS;},
+		getFPS: function() {return fps.lastFPS;},
 	}
 }
 
