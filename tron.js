@@ -67,9 +67,8 @@ Grid.prototype.isInBounds = function(x, y) {
 
 
 Grid.wrap = function(x, size) {
-	if(x < 0) { return x + size; }
-	if(x >= size) {return x - size; }
-	return x;
+	x %= size;
+	return x + ((x < 0) ? size : 0);
 }
 
 Grid.prototype.checkAlive = function(x, y) {
@@ -82,16 +81,16 @@ Grid.prototype.checkAlive = function(x, y) {
 
 Grid.prototype.setAlive = function(x, y, life) {
 	if(!this.isInBounds(x,y)) { 
-		x = this.wrap(x, this.size.x);
-		y = this.wrap(y, this.size.y);
+		x = Grid.wrap(x, this.size.x);
+		y = Grid.wrap(y, this.size.y);
 	}
 	this.dataNext[x][y] = life;
 }
 
 Grid.prototype.setAliveNow = function(x, y, life) {
 	if(!this.isInBounds(x,y)) { 
-		x = this.wrap(x, this.size.x);
-		y = this.wrap(y, this.size.y);
+		x = Grid.wrap(x, this.size.x);
+		y = Grid.wrap(y, this.size.y);
 	}
 	this.data[x][y] = life;
 }
