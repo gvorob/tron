@@ -77,6 +77,10 @@ input.num_input{
 			Cell size: <input id="cellsize" class="num_input" type="number"/>
 			Draw Grid: <input id="drawGrid" type="checkbox"></div>
 	</div>
+	<div class="ui_group">
+		FPS: <span id="fps_counter"></span>
+
+	</div>
 </div>
 
 <script type="text/javascript" src="jquery-1.12.1.js"></script>
@@ -203,19 +207,20 @@ function init() {
 		inputProp(UI.cellsize_input, Wrapper.cellSizeProp(UI.cellsize_input.val()));
 	});
 
-	/*
-	$('input:radio[name=theme]').click(function() {
-	  var val = $('input:radio[name=theme]:checked').val();
-	  });
-	*/
+	//update FPS counter
+	UI.fps_counter = $("span#fps_counter");
+	setInterval(function() {
+		UI.fps_counter.text(Wrapper.getFPS());},
+		1000);
 
-	console.log("Running code...")
+	//Init UI fields to reflect values
+	initProperties()
+
+	//===============================
+	//Start main code
 
 	//Init Wrapper
 	Wrapper.init(DEFAULTS.gridSize, UI.canvas[0], DEFAULTS.cellSize)
-
-	//Init all options to their actual values
-	initProperties()
 }
 
 function initProperties() {
