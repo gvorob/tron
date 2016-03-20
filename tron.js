@@ -403,7 +403,11 @@ var Wrapper = function(){
 		})
 		canvas = in_canvas;
 		cellSize = in_cellSize;
-		pan.init(60, 5)
+
+		PAN_UI_SIZE = 60;
+		PAN_TPS = 50;
+		PAN_DISTANCE = 5;
+		pan.init(PAN_UI_SIZE, PAN_TPS, PAN_DISTANCE);
 
 		tickTimer = new Timer(step, 5);
 
@@ -472,13 +476,13 @@ var Wrapper = function(){
 		return v2;
 	}
 
-	pan.init = function(limit, speed){
+	pan.init = function(limit, tps, distance){
 		pan.panLimit = limit; //number of pixels from edge s.t. you pan
-		pan.panSpeed = speed
-		pan.intervalMillis = 20;
-
+		pan.panDistance = distance
 		pan.panDirection = new Vector(0,0);
 		
+		pan.timer = new Timer(pan.doPan, tps);
+
 		var cSize = canvas.getBoundingClientRect();
 		var w = cSize.width;
 		var h = cSize.height;
@@ -502,30 +506,31 @@ var Wrapper = function(){
 		pan.clampView();
 	
 		//slides the screen repeatedly if need be
-		pan.doPan();
+		pan.checkPan();
 	}
 
 	//Get the direction to pan based on mouse coords
 	pan.checkPan = function(){
-		var result = new Vector(0,0);
+		pan.panDirection = new Vector(0,0);
+		//Check which zones mouse is in
 		if(mouse.onScreen) {
 			for(var i = 0; i < pan.zones.length; i++) {
 				if(pan.zones[i].bounds.contains(mouse.pixelCoords)) {
-					result.addV(pan.zones[i].direction);
+					pan.panDirection.addV(pan.zones[i].direction);
 				}
 			}
 		}
-		pan.panDirection = result;
+		//Play/pause pan timer
+		var panning = !pan.panDirection.equals(0,0);
+		pan.timer.playingProp(panning);	
 	}
 
-	//Pan the screen every amount of time
+	//Pan the screen by panDistance in the appropriate direction
 	pan.doPan = function() {
-		if(!pan.panDirection.equals(0,0)) {
-			viewStart.addScaledV(pan.panSpeed, pan.panDirection);
-			pan.clampView();
-			redraw();
-		}
-		setTimeout(pan.doPan, pan.intervalMillis);
+		viewStart.addScaledV(pan.panDistance, pan.panDirection);
+		//$("#debug").html(pan.timer.getFPS());
+		pan.clampView();
+		redraw();
 	}
 
 	pan.clampView = function() {
