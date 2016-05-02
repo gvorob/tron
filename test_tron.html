@@ -102,9 +102,10 @@ Temp:
 console.log("Loading main js...")
 
 var DEFAULTS = {
-	gridSize: new Vector(32, 32),
-	cellSize: 16,
-	drawGrid: true,
+	gridSize:    new Vector(32, 32),
+	cellSize:    16,
+	drawGrid:    true,
+	patternURL:  "pattern_list.js",
 };
 
 var UI = {};
@@ -240,11 +241,18 @@ function init() {
 		console.dir($(this));
 	});
 
+	//===============================
+	//Other initialization
+
 	//update FPS counter
 	UI.fps_counter = $("span#fps_counter");
 	setInterval(function() {
 		UI.fps_counter.text(Wrapper.getFPS());},
 		1000);
+
+
+	//Load patterns into patternlist
+	loadExistingPatterns();
 
 	//Init UI fields to reflect values
 	initProperties()
@@ -260,6 +268,29 @@ function initProperties() {
 	xyFormProp(UI.resize_form,     DEFAULTS.gridSize);
 	inputProp (UI.cellsize_input,  DEFAULTS.cellSize);
 	UI.drawGrid_input[0].checked = DEFAULTS.drawGrid;
+}
+
+function loadExistingPatterns() {
+	console.log("attemptingto load stuff");
+	$.ajax({
+		url: DEFAULTS.patternURL,
+		data: "",
+		dataType: "json",
+		mimeType: "application/json",
+		success: function(a, b, c){
+				console.log("loaded stuff");
+				renderPatternList(a);
+			},
+		done: function(a, b, c){
+				console.log("done");
+		},
+		error: function(a, b, c){
+				console.log(a);	
+				console.log(b);	
+				console.log(c);	
+				throw "ERROR in loadExistingPatterns";
+		},
+	});
 }
 
 console.log("Done");
