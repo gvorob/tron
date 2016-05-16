@@ -267,10 +267,10 @@ Grid.prototype.exportRLE = function() {
 		rleString += "$\n";
 	}
 	//terminate RLE
-	if(runlength > 1)
-		rleString += runlength;
-	rleString += last ? "o" : "b";
-	rleString += "$!";
+	//if(runlength > 1)
+		//rleString += runlength;
+	//rleString += last ? "o" : "b";
+	rleString += "!";
 
 
 	return rleString;
