@@ -237,8 +237,7 @@ function init() {
 	//Pattern list
 	UI.pattern_list = $("div#pattern_list");
 	UI.pattern_list.on("click","div", function(event) {
-		console.log(event);
-		console.dir($(this));
+		requestPatternById(event.target.id);
 	});
 
 	//===============================
@@ -277,20 +276,46 @@ function loadExistingPatterns() {
 		data: "",
 		dataType: "json",
 		mimeType: "application/json",
-		success: function(a, b, c){
+		success: function(data, status){
 				console.log("loaded stuff");
-				renderPatternList(a);
+				console.log(status);
+				renderPatternList(data);
 			},
-		done: function(a, b, c){
+		done: function(data, status){
 				console.log("done");
+				console.log(status);
 		},
-		error: function(a, b, c){
-				console.log(a);	
-				console.log(b);	
-				console.log(c);	
+		error: function(data, status){
+				console.log(data);
+				console.log(status);
 				throw "ERROR in loadExistingPatterns";
 		},
 	});
+}
+
+function requestPatternById(id) {
+	console.log("trying to request pattern " + id);
+	$.ajax({
+		url: DEFAULTS.patternURL + "?id=" + id,
+		data: "",
+		dataType: "json",
+		mimeType: "application/json",
+		success: function(data, status){
+				console.log("loaded stuff");
+				console.log(status);
+				console.log(data);
+			},
+		done: function(data, status){
+				console.log("done");
+				console.log(status);
+		},
+		error: function(data, status){
+				console.log(data);
+				console.log(status);
+				throw "ERROR in requestPatternById";
+		},
+	});
+
 }
 
 console.log("Done");
