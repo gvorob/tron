@@ -197,7 +197,7 @@ Grid.drawLine = function(g, x1, y1, x2, y2) {
 	g.stroke()
 }
 
-Grid.prototype.draw = function(g, cellSize, vstart, drawGrid) {
+Grid.prototype.draw = function(g, cellSize, vstart, drawGrid, color="#420") {
 	g.save();
 	g.translate(-vstart.x, -vstart.y);
 
@@ -205,7 +205,7 @@ Grid.prototype.draw = function(g, cellSize, vstart, drawGrid) {
 	if(drawGrid === undefined) { drawGrid = true; }
 	
 	//Draw cells
-	g.fillStyle = "#420"// : "#EEE";
+	g.fillStyle = color// : "#EEE";
 	for(var i = 0; i < this.size.x; i++){
 		for(var j = 0; j < this.size.y; j++){
 			if(this.data[i][j]) { g.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);}
@@ -230,10 +230,12 @@ Grid.prototype.draw = function(g, cellSize, vstart, drawGrid) {
 			Grid.drawLine(g, 0, lineY, gridRight, lineY);
 		}
 	} else {
+		/*
 		Grid.drawLine(g, 0,         0,          gridRight, 0         );
 		Grid.drawLine(g, 0,         gridBottom, gridRight, gridBottom);
 		Grid.drawLine(g, 0,         0,          0,         gridBottom);
 		Grid.drawLine(g, gridRight, 0,          gridRight, gridBottom);
+		*/
 	}
 	g.restore();
 }
